@@ -68,18 +68,18 @@ Right now, there are only two measly scripts in *bioknack*:
     * recognised entity
     * **Example:** `1292   1296   gene product   MAPK`
   * The output is either a detailed comparison between the tagged
-    contents of the `.a1` file and `chagger.rb` output, or it is
+    contents of the `.a1` file and the entity recognition output, or it is
     simply a tab-separated list of precision, recall and F-score (`-t`
     parameter).
   * **Examples:**
-    * `./statter.rb 10089566.a1 10089566.chagger`
+    * `./statter.rb 10089566.a1 10089566.entities`
       * lines beginning with `+` denote a true positive
       * lines beginning with `-` denote a false positive
       * lines beginning with `!` denote an false positive, which
         did mismatch the given character positions
       * lines beginning with `?` denote a false negative
       * lines beginning with `*` denote statistical output
-    * `./statter.rb -t -f 2.0 10089566.a1 10089566.chagger`
+    * `./statter.rb -t -f 2.0 10089566.a1 10089566.entities`
       * outputs tab-separated values for precision, recall and F_2.0 score
 
 ---
