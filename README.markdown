@@ -27,6 +27,21 @@ collection of Ruby scripts. They can be retrieved as follows:
 This will create a directory called `bioknack` with the *bioknack*
 scripts in it.
 
+*bioknack* Scripts
+------------------
+
+Right now, there is only a measly single script in *bioknack*:
+
+* **chagger**
+  * Augments a part-of-speech tagged documents with character-based
+    positions for each token that indicate the token's position in
+    the original text.
+  * Takes as input the original (untagged) text-file and the
+    tagged text.
+  * In the output, each token is extended by `(x,y)`, where `x` and
+    `y` denote the character positions of the token in the original
+    text. The positions are zero-based.
+
 ---
 
 License
