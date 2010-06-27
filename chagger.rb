@@ -1,12 +1,35 @@
 #!/usr/bin/ruby
 
-if ARGV.length != 2 then
-	puts 'Usage: ...'
+require 'optparse'
+
+$raw = false
+
+def print_help()
+        puts 'Usage: chagger.rb [-r] textfile'
+        puts '  -r | --raw           : do not remove the escape character \'\\\''
+end
+
+options = OptionParser.new { |option|
+        option.on('-r', '--raw') { $raw = true }
+}
+
+begin
+	options.parse!
+rescue OptionParser::InvalidOption
+	print_help()
 	exit
 end
 
-text_file = File.open(ARGV[0], 'r')
-tagged_file = File.open(ARGV[1], 'r')
+if ARGV.length != 2 then
+        print_help()
+        exit
+end
+
+text_file_name = ARGV[0]
+tagged_file_name = ARGV[1]
+
+text_file = File.open(text_file_name, 'r')
+tagged_file = File.open(tagged_file_name, 'r')
 
 text = ''
 while line = text_file.gets do text << line end
@@ -19,7 +42,7 @@ tokens = tagged_text.split
 cursor = 0
 tokens.each { |token|
 	word = token.sub(/_.+$/, '')
-	word.gsub!(/(\\)(.)/, '\2') # Remove escape characters.
+	word.gsub!(/(\\)(.)/, '\2') unless $raw # Remove escape characters.
 	first_appearance = text.index(word)
 
 	if not first_appearance then
