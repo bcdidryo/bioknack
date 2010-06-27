@@ -5,7 +5,7 @@ require 'optparse'
 $raw = false
 
 def print_help()
-        puts 'Usage: chagger.rb [-r] textfile'
+        puts 'Usage: chagger.rb [-r] originalfile taggedfile'
         puts '  -r | --raw           : do not rewrite escaped characters'
 end
 

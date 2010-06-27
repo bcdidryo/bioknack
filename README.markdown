@@ -32,7 +32,7 @@ scripts in it.
 
 Right now, there is only a measly single script in *bioknack*:
 
-* **chagger**
+* **chagger.rb**
   * Augments a part-of-speech tagged documents with character-based
     positions for each token that indicate the token's position in
     the original text.
@@ -57,6 +57,30 @@ Right now, there is only a measly single script in *bioknack*:
       Stat5\_NNP(35,40)
       and\_CC(41,44)
       Stat1\_NNP(45,50) *[...]*"
+* **statter.rb**
+  * Compares a `.a1` file of **BioNLP '09** to the output generated
+    by a entity recognition finder. It outputs (mis-)matches and statistical
+    information (precision, recall and F_beta score).
+  * Takes as input a `.a1` file and a tab-separated file with the columns
+    * character start of recognised entity
+    * character stop of recognised entity (one character beyond entity)
+    * type of entity (not used)
+    * recognised entity
+    * **Example:** `1292   1296   gene product   MAPK`
+  * The output is either a detailed comparison between the tagged
+    contents of the `.a1` file and `chagger.rb` output, or it is
+    simply a tab-separated list of precision, recall and F-score (`-t`
+    parameter).
+  * **Examples:**
+    * `./statter.rb 10089566.a1 10089566.chagger`
+      * lines beginning with `+` denote a true positive
+      * lines beginning with `-` denote a false positive
+      * lines beginning with `!` denote an false positive, which
+        did mismatch the given character positions
+      * lines beginning with `?` denote a false negative
+      * lines beginning with `*` denote statistical output
+    * `./statter.rb -t -f 2.0 10089566.a1 10089566.chagger`
+      * outputs tab-separated values for precision, recall and F_2.0 score
 
 ---
 
