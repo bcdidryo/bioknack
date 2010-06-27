@@ -40,7 +40,23 @@ Right now, there is only a measly single script in *bioknack*:
     tagged text.
   * In the output, each token is extended by `(x,y)`, where `x` and
     `y` denote the character positions of the token in the original
-    text. The positions are zero-based.
+    text. `x` coincides with the beginning of the token, where as `y`
+    is the first character *after* the token in the original text. The
+    positions are zero-based. This format is suitable for comparisons
+    with the **BioNLP '09** data-set.
+  * **Example:**
+    * `source.txt` contains "Functional association of
+      Nmi with Stat5 and Stat1 *[...]*"
+    * `tagged.txt` contains "Functional_JJ association\_NN of\_IN Nmi\_NNP
+      with\_IN Stat5\_NNP and\_CC Stat1\_NNP *[...]*"
+    * `chagger.pl source.txt tagged.txt` produces the output "Functional\_JJ(0,10)
+      association\_NN(11,22)
+      of\_IN(23,25)
+      Nmi\_NNP(26,29)
+      with\_IN(30,34)
+      Stat5\_NNP(35,40)
+      and\_CC(41,44)
+      Stat1\_NNP(45,50) *[...]*"
 
 ---
 

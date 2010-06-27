@@ -6,7 +6,7 @@ $raw = false
 
 def print_help()
         puts 'Usage: chagger.rb [-r] textfile'
-        puts '  -r | --raw           : do not remove the escape character \'\\\''
+        puts '  -r | --raw           : do not rewrite escaped characters'
 end
 
 options = OptionParser.new { |option|
@@ -42,7 +42,16 @@ tokens = tagged_text.split
 cursor = 0
 tokens.each { |token|
 	word = token.sub(/_.+$/, '')
-	word.gsub!(/(\\)(.)/, '\2') unless $raw # Remove escape characters.
+	
+	if not $raw then
+		# Remove escape characters.
+		word.gsub!(/(\\)(.)/, '\2')
+
+		# Rewrite brackets.
+		word.gsub!(/-LRB-/, '(')
+		word.gsub!(/-RRB-/, ')')
+	end
+
 	first_appearance = text.index(word)
 
 	if not first_appearance then
