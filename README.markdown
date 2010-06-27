@@ -69,8 +69,9 @@ Right now, there are only two measly scripts in *bioknack*:
     * **Example:** `1292   1296   gene product   MAPK`
   * The output is either a detailed comparison between the tagged
     contents of the `.a1` file and the entity recognition output, or it is
-    simply a tab-separated list of precision, recall and F-score (`-t`
-    parameter).
+    simply a tab-separated list of number of true positives, number of
+    false positives, number of false negatives, precision, recall and
+    F-score (`-t` parameter).
   * **Examples:**
     * `./statter.rb 10089566.a1 10089566.entities`
       * lines beginning with `+` denote a true positive

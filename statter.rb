@@ -4,8 +4,9 @@ require 'optparse'
 
 def print_help()
         puts 'Usage: statter.rb [-t] [-f beta] goldfile evaluatefile'
-        puts '  -t | --tsv              : output tabulator separated values of'
-	puts '                            precision, recall and f-score'
+        puts '  -t | --tsv              : output tabulator separated num. values of'
+	puts '                            true positives, false positives, false'
+	puts '                            negatives, precision, recall and f-score'
 	puts '  -f beta | --fscore beta : compute F_beta score, default 1.0'
 end
 
@@ -95,7 +96,7 @@ recall = true_positives.to_f / (true_positives + false_negatives)
 f_score = (1.0 + $beta * $beta) * precision * recall / ($beta * $beta * precision + recall)
 
 if $tsv then
-	puts "#{precision}\t#{recall}\t#{f_score}"
+	puts "#{true_positives}\t#{false_positives}\t#{false_negatives}\t#{precision}\t#{recall}\t#{f_score}"
 	exit
 end
 
