@@ -5,8 +5,8 @@ bioknack
 are relevant to bioinformatic applications. The tool set
 will be updated every time I get the knack of solving a
 problem which is sufficiently significant to be of public
-interest. For now, *bioknack* consists of only one
-contribution, but this will change eventually.
+interest. For now, *bioknack* consists of only two
+contributions, but this will change eventually.
 
 Prerequisites
 -------------
@@ -30,7 +30,7 @@ scripts in it.
 *bioknack* Scripts
 ------------------
 
-Right now, there is only a measly single script in *bioknack*:
+Right now, there are only two measly scripts in *bioknack*:
 
 * **chagger.rb**
   * Augments a part-of-speech tagged documents with character-based
