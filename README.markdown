@@ -5,7 +5,7 @@ bioknack
 are relevant to bioinformatic applications. The tool set
 will be updated every time I get the knack of solving a
 problem which is sufficiently significant to be of public
-interest. For now, *bioknack* consists of only two
+interest. For now, *bioknack* consists of only three
 contributions, but this will change eventually.
 
 Prerequisites
@@ -30,7 +30,10 @@ scripts in it.
 *bioknack* Scripts
 ------------------
 
-Right now, there are only two measly scripts in *bioknack*:
+Right now, there are only three measly scripts in *bioknack* as listed below.
+Each of the scripts will provide some further information when called without
+parameters, whereas the following bullet points describe general aspects of
+the programs.
 
 * **chagger.rb**
   * Augments a part-of-speech tagged documents with character-based
@@ -57,6 +60,26 @@ Right now, there are only two measly scripts in *bioknack*:
       Stat5\_NNP(35,40)
       and\_CC(41,44)
       Stat1\_NNP(45,50) *[...]*"
+* **meshuggener**
+  * Imports MeSH-descriptor .bin-files into a MySQL-database. The script will create
+    tables `descriptor`, `descriptor_backfile_posting` and `descriptor_entry`. All
+    tables are denormalised.
+    * `descriptor` will contain one column for each key in the .bin-file, except for
+      the keys `ENTRY` and the backfile postings (keys `MED` and `Mx`, where `x` is
+      some integer value. Each record is assigned a unique unsigned integer value in
+      the column `ENTRY_KEY`.
+    * `descriptor_backfile_posting` contains a column `ENTRY_KEY` and columns for
+      backfile postings, which were not included in the table `descriptor`.
+    * `descriptor_entry` contains to columns: `ENTRY_KEY` and `ENTRY`, mapping the
+      left-out `ENTRY` values in `descriptor` to `ENTRY_KEY`s.
+  * The tables are created automatically, where existing tables with the names
+    given above will be deleted.
+  * The database must exist prior to using this script. It can be empty though.
+  * **Example:**
+    * `meshuggener.rb -u mysql -p secret d2010.bin mesh2010` logs into the MySQL
+      database as user `mysql` with the password `secret` and loads the contents
+      of the file `d2010.bin` into the tables `descriptor`, `descriptor_backfile_posting`
+      and `descriptor_entry` of the database `mesh2010`.
 * **statter.rb**
   * Compares a `.a1` file of **BioNLP '09** to the output generated
     by a entity recognition finder. It outputs (mis-)matches and statistical

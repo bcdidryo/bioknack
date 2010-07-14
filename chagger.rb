@@ -56,6 +56,10 @@ tokens.each { |token|
 	end
 
 	first_appearance = text.index(word)
+	blackspace = text.match(/\s*\S/)
+
+	# LRB and RRB can be (, <, etc. We might accidentally match a (, even though we should have matched a [.
+	first_appearance = 0 if first_appearance and blackspace and first_appearance > blackspace.to_s.length
 
 	if not first_appearance then
 		if $strict then
@@ -66,7 +70,11 @@ tokens.each { |token|
 
 		# Assume the next word is what we are looking for:
 		first_appearance = text.index(/\S/)
-		word = text[first_appearance..-1].match(/\S+/).to_s
+		if word.match(/^\W$/) then
+			word = text[first_appearance..first_appearance]
+		else
+			word = text[first_appearance..-1].match(/\S+/).to_s
+		end
 	end
 
 	token_start = cursor + first_appearance
