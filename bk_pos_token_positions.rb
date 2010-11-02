@@ -6,7 +6,7 @@ $raw = false
 $strict = false
 
 def print_help()
-        puts 'Usage: chagger.rb [-n] [-r] [-s] originalfile taggedfile'
+        puts 'Usage: bk_pos_token_positions.rb [-n] [-r] [-s] originalfile taggedfile'
         puts '  -r | --raw       : do not rewrite escaped characters'
 	puts '  -s | --strict    : do not skip words that cannot be resolved'
 end

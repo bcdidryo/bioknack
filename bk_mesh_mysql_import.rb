@@ -5,7 +5,7 @@ require 'optparse'
 require 'dbi'
 
 def print_help()
-        puts 'Usage: meshuggener.rb [-h host] [-P port] [-u username] [-p password] binfile database'
+        puts 'Usage: bk_mesh_mysql_import.rb [-h host] [-P port] [-u username] [-p password] binfile database'
         puts '  -h | --host              : MySQL hostname (default: localhost)'
         puts '  -P | --port              : MySQL port (default: 3306)'
 	puts '  -u | --user username     : MySQL username (default: mysql)'

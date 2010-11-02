@@ -3,7 +3,7 @@
 require 'optparse'
 
 def print_help()
-        puts 'Usage: statter.rb [-t] [-f beta] goldfile evaluatefile'
+        puts 'Usage: bk_ner_eval_bionlp09.rb [-t] [-f beta] goldfile evaluatefile'
         puts '  -t | --tsv              : output tabulator separated num. values of'
 	puts '                            true positives, false positives, false'
 	puts '                            negatives, precision, recall and f-score'
