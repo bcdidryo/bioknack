@@ -16,10 +16,10 @@ You need to install the following programs to run *bioknack*:
 * Ruby 1.8
 * Ruby Gems 1.3
 
-*bioknack* also works with Ruby 1.9 and JRuby. For tools that
+*bioknack* also works with Ruby 1.9 and JRuby. **For tools that
 support multi-threading, it is best to run them with JRuby, since
-the standard implementations do not support running threads
-in parallel.
+the standard implementations do not truly support running threads
+in parallel.**
 
 Installing *bioknack*
 ---------------------
