@@ -106,6 +106,13 @@ the programs.
       database as user `mysql` with the password `secret` and loads the contents
       of the file `d2010.bin` into the tables `descriptor`, `descriptor_backfile_posting`
       and `descriptor_entry` of the database `mesh2010`.
+* **bk_sql_txt_mysql_import.rb**
+  * Imports data into a MySQL-database with table descriptions given in .sql-files and
+    the tables' contents given in .txt-files.
+  * **Example:**
+    * `bk_sql_txt_mysql_import.rb -u mysql -p secret ~/go_201005-assocdb-tables go_201005`
+      imports the GO-database (gene ontology database) into the existing MySQL-database
+      `go_201005`.
 * **bk_ner_eval_bionlp09.rb**
   * Compares a `.a1` file of **BioNLP '09** to the output generated
     by an entity recognition tool. It outputs (mis-)matches and statistical

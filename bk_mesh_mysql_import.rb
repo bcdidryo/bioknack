@@ -11,7 +11,7 @@ def print_help()
 	puts '  -u | --user username     : MySQL username (default: mysql)'
 	puts '  -p | --password password : MySQL password (default: mysql)'
 	puts ''
-	puts 'Note: The database must exist before the meshuggener can use it.'
+	puts 'Note: The database must exist.'
 end
 
 db_host = 'localhost'
