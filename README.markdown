@@ -86,6 +86,19 @@ the programs.
       * 14801717\tinfluenza\t17\t25\t1
       * 14801717\tinfluenza virus\t17\t31\t1.1
       * 12332212\ttreatment of\t0\t11\t
+* **bk_ner_gnat_genes.rb**
+  * Uses the public web-service of GNAT/LINNAEUS to find gene mentions in abstracts
+    of MEDLINE articles (via Pubmed ID) or full-text articles of Pubmed Central (via
+    Pubmed Central ID). Returns the document ID, Entrez gene ID and a confidence score.
+  * **Example:**
+    * `bk_ner_gnat_genes.rb --pmcid 2883966` outputs the following lines:
+      * 2883966\t17869\t3.0
+      * 2883966\t18538\t1.0
+      * 2883966\t11651\t1.0
+      * 2883966\t26417\t1.0
+      * 2883966\t13649\t1.0
+      * 2883966\t12367\t1.0
+      * 2883966\t11545\t1.0
 * **bk_mesh_mysql_import.rb**
   * Imports MeSH-descriptor .bin-files into a MySQL-database. The script will create
     tables `descriptor`, `descriptor_backfile_posting` and `descriptor_entry`. All
