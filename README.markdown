@@ -126,6 +126,18 @@ the programs.
     * `bk_sql_txt_mysql_import.rb -u mysql -p secret ~/go_201005-assocdb-tables go_201005`
       imports the GO-database (gene ontology database) into the existing MySQL-database
       `go_201005`.
+* **bk_stats_biocreative_3.rb**
+  * Takes a gold- or silver-standard file from BioCreative 3 and calculates true positives, false positives,
+    precision, recall, F(0.5,1,2) score for a given GN task submission.
+  * **Example:**
+    * `bk_stats_biocreative_3.rb GNTestEval/test50.gold.txt bc3gn_t789_r1.txt` outputs the following lines:
+      * True positives: 453
+      * False positives: 15381
+      * Precision: 0.02860932171277
+      * Recall: 0.271420011983223
+      * F0.5 score: 0.0348434735789555
+      * F1 score: 0.051762554990573
+      * F2 score: 0.100621945801866
 * **bk_ner_eval_bionlp09.rb**
   * Compares a `.a1` file of **BioNLP '09** to the output generated
     by an entity recognition tool. It outputs (mis-)matches and statistical

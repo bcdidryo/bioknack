@@ -3,12 +3,12 @@
 require 'optparse'
 
 def print_help()
-	puts 'Usage: bk_stats_bc3.rb standard nerfile'
+	puts 'Usage: bk_stats_biocreative_3.rb standard nerfile'
 	puts '  standard : gold/silver standard file'
 	puts '  nerfile  : output from NER tool'
 	puts ''
 	puts 'Example:'
-	puts 'bk_stats_bc3.rb GNTestEval/test50.gold.txt bc3gn_t68_r1.txt'
+	puts 'bk_stats_biocreative_3.rb GNTestEval/test50.gold.txt bc3gn_t68_r1.txt'
 end
 
 options = OptionParser.new { |option|
