@@ -12,10 +12,19 @@ require 'thread'
 @read_lock = Mutex.new
 @write_lock = Mutex.new
 
+# Modes for the dictionary:
+#  :functional - 1:1 mapping of keys to values
+#  :relational - 1:n mapping of keys to values
+@mode = :functional
+
+# Separator used to fuse values when @mode is :relational
+@separator = "\t"
+
 @threads = 4
 @consecutive_reads = 1000
 @consecutive_writes = 1000
 
+# Creates dictionary entries and associates 'xref' with the dictionary entry.
 def distribute(dictionary_entry, xref)
 	dictionary_entry.downcase!
 	words = dictionary_entry.scan(@sentence_chunks)
@@ -26,7 +35,18 @@ def distribute(dictionary_entry, xref)
 	@dictionary[arity] = {} if not @dictionary.has_key?(arity)
 
 	arity_dictionary = @dictionary[arity]
-	arity_dictionary[words.join()] = xref
+	key = words.join()
+	case @mode
+	when :functional
+		arity_dictionary[key] = xref
+	when :relational
+		set = arity_dictionary[key]
+		set = [] unless set
+		set |= [ xref ]
+		arity_dictionary[key] = set
+	else
+		raise 'Unknown mode. Check the comments to @mode in the source.'
+	end
 
 	@lookahead_min[words[0]] = arity unless @lookahead_min.has_key?(words[0])
 	@lookahead_min[words[0]] = arity if @lookahead_min[words[0]] > arity
@@ -39,15 +59,36 @@ def distribute(dictionary_entry, xref)
 end
 
 def print_help()
-	puts 'Usage: bk_ner.rb database dictionary'
+	puts 'Usage: bk_ner.rb [options] database dictionary'
+	puts 'Options:'
+	puts '  -m MODE | --mode MODE           : dictionary key/value mapping (default: ' << @mode << ')'
+	puts '                                    values for MODE:'
+	puts '                                      functional - 1:1 mapping between keys and values'
+	puts '                                      relational - 1:n mapping between keys and values'
+	puts '  -s CHAR | --separator CHAR      : character to use to join multiple values with'
+	puts '                                    MODE :relational (default: \t)'
 	puts '  -t THREADS | --threads THREADS  : number of threads (default: ' << @threads.to_s << ')'
 	puts '  -r READS | --reads READS        : consecutive reads (default: ' << @consecutive_reads.to_s << ')'
 	puts '  -w WRITES | --writes WRITES     : consecutive writes (default: ' << @consecutive_writes.to_s << ')'
 	puts ''
 	puts 'Fastest with JRuby due to thread usage.'
+	puts ''
+	puts 'NCBI Gene Data:'
+	puts '  ftp://ftp.ncbi.nih.gov/gene/DATA/gene_info.gz'
 end
 
 options = OptionParser.new { |option|
+	option.on('-m', '--mode MODE') { |m|
+		case m
+		when 'functional'
+			@mode = :functional
+		when 'relational'
+			@mode = :relational
+		else
+			@mode = :unknown
+		end
+	}
+	option.on('-s', '--separator CHAR') { |char| @separator = char }
 	option.on('-t', '--threads THREADS') { |threads_no| @threads = threads_no.to_i }
 	option.on('-r', '--reads READS') { |reads| @consecutive_reads = reads.to_i }
 	option.on('-w', '--writes WRITES') { |writes| @consecutive_writes = writes.to_i }
@@ -56,6 +97,11 @@ options = OptionParser.new { |option|
 begin
 	options.parse!
 rescue OptionParser::InvalidOption
+	print_help()
+	exit
+end
+
+if @mode == :unknown then
 	print_help()
 	exit
 end
@@ -108,6 +154,7 @@ def munch(line, digest)
 				dictionary_entry = arity_dictionary[word_or_compound]
 				if dictionary_entry then
 					boundary = offset + word_or_compound.length - 1
+					dictionary_entry = dictionary_entry.join(@separator) if @mode == :relational
 					digest << "#{id}\t#{word_or_compound}\t#{offset.to_s}\t#{boundary.to_s}\t#{dictionary_entry}"
 				end
 			end
