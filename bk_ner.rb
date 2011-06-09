@@ -12,6 +12,13 @@ require 'thread'
 @read_lock = Mutex.new
 @write_lock = Mutex.new
 
+# If @brief is true, then do not repeat dictionary matches per munch-call
+# (makes only sense in conjunction with @concise = true, really)
+@brief = false
+
+# If @concise is true, then do not output character positions
+@concise = false
+
 # Modes for the dictionary:
 #  :functional - 1:1 mapping of keys to values
 #  :relational - 1:n mapping of keys to values
@@ -61,12 +68,14 @@ end
 def print_help()
 	puts 'Usage: bk_ner.rb [options] database dictionary'
 	puts 'Options:'
-	puts '  -m MODE | --mode MODE           : dictionary key/value mapping (default: ' << @mode << ')'
+	puts '  -b | --brief                    : do not repeat matched dictionary entries (per document)'
+	puts '  -c | --concise                  : do not output character positions'
+	puts '  -m MODE | --mode MODE           : dictionary key/value mapping (default: ' << @mode.to_s << ')'
 	puts '                                    values for MODE:'
 	puts '                                      functional - 1:1 mapping between keys and values'
 	puts '                                      relational - 1:n mapping between keys and values'
 	puts '  -s CHAR | --separator CHAR      : character to use to join multiple values with'
-	puts '                                    MODE :relational (default: \t)'
+	puts '                                    MODE :relational (default: \t (tabulator))'
 	puts '  -t THREADS | --threads THREADS  : number of threads (default: ' << @threads.to_s << ')'
 	puts '  -r READS | --reads READS        : consecutive reads (default: ' << @consecutive_reads.to_s << ')'
 	puts '  -w WRITES | --writes WRITES     : consecutive writes (default: ' << @consecutive_writes.to_s << ')'
@@ -78,6 +87,8 @@ def print_help()
 end
 
 options = OptionParser.new { |option|
+	option.on('-b', '--brief') { @brief = true }
+	option.on('-c', '--concise') { @concise = true }
 	option.on('-m', '--mode MODE') { |m|
 		case m
 		when 'functional'
@@ -123,8 +134,15 @@ dictionary_file.each { |line|
 	token, xref = line.split("\t", 2)
 
 	if xref then
-		xref.chomp!
-		distribute(token, xref)
+		if @mode == :functional then
+			xref.chomp!
+			distribute(token, xref)
+		else
+			xref.split("\t").each { |xref_n|
+				xref_n.chomp!
+				distribute(token, xref_n)
+			}
+		end
 	else
 		token.chomp!
 		distribute(token, xref_alternative)
@@ -136,6 +154,7 @@ dictionary_file.close
 def munch(line, digest)
         id, text = line.split("\t", 2)
 
+	seen_entries = {} if @brief
 	offset = 0
 	text.downcase!
 	words = text.scan(@sentence_chunks)
@@ -152,10 +171,15 @@ def munch(line, digest)
 			arity_dictionary = @dictionary[arity]
 			if arity_dictionary then
 				dictionary_entry = arity_dictionary[word_or_compound]
-				if dictionary_entry then
+				if dictionary_entry and (!@brief or !seen_entries[word_or_compound]) then
+					seen_entries[word_or_compound] = true if @brief
 					boundary = offset + word_or_compound.length - 1
 					dictionary_entry = dictionary_entry.join(@separator) if @mode == :relational
-					digest << "#{id}\t#{word_or_compound}\t#{offset.to_s}\t#{boundary.to_s}\t#{dictionary_entry}"
+					unless @concise then
+						digest << "#{id}\t#{word_or_compound}\t#{offset.to_s}\t#{boundary.to_s}\t#{dictionary_entry}"
+					else
+						digest << "#{id}\t#{word_or_compound}\t#{dictionary_entry}"
+					end
 				end
 			end
 
