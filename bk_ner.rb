@@ -19,6 +19,10 @@ require 'thread'
 # If @concise is true, then do not output character positions
 @concise = false
 
+# If @lines is true, then multiple dictionary matches (with @mode == :relational)
+# are written on separate lines instead of concatening the dictionary entries
+@lines = false
+
 # Modes for the dictionary:
 #  :functional - 1:1 mapping of keys to values
 #  :relational - 1:n mapping of keys to values
@@ -48,9 +52,11 @@ def distribute(dictionary_entry, xref)
 		arity_dictionary[key] = xref
 	when :relational
 		set = arity_dictionary[key]
-		set = [] unless set
-		set |= [ xref ]
-		arity_dictionary[key] = set
+		unless set then
+			set = {}
+			arity_dictionary[key] = set
+		end
+		set[xref] = true
 	else
 		raise 'Unknown mode. Check the comments to @mode in the source.'
 	end
@@ -74,8 +80,10 @@ def print_help()
 	puts '                                    values for MODE:'
 	puts '                                      functional - 1:1 mapping between keys and values'
 	puts '                                      relational - 1:n mapping between keys and values'
+	puts '  -l | --lines                    : write multiple dictionary matches on separate lines'
 	puts '  -s CHAR | --separator CHAR      : character to use to join multiple values with'
-	puts '                                    MODE :relational (default: \t (tabulator))'
+	puts '                                    when MODE is :relational and -l is not used'
+	puts '                                    (default: \t (tabulator))'
 	puts '  -t THREADS | --threads THREADS  : number of threads (default: ' << @threads.to_s << ')'
 	puts '  -r READS | --reads READS        : consecutive reads (default: ' << @consecutive_reads.to_s << ')'
 	puts '  -w WRITES | --writes WRITES     : consecutive writes (default: ' << @consecutive_writes.to_s << ')'
@@ -99,6 +107,7 @@ options = OptionParser.new { |option|
 			@mode = :unknown
 		end
 	}
+	option.on('-l', '--lines') { @lines = true }
 	option.on('-s', '--separator CHAR') { |char| @separator = char }
 	option.on('-t', '--threads THREADS') { |threads_no| @threads = threads_no.to_i }
 	option.on('-r', '--reads READS') { |reads| @consecutive_reads = reads.to_i }
@@ -174,11 +183,23 @@ def munch(line, digest)
 				if dictionary_entry and (!@brief or !seen_entries[word_or_compound]) then
 					seen_entries[word_or_compound] = true if @brief
 					boundary = offset + word_or_compound.length - 1
-					dictionary_entry = dictionary_entry.join(@separator) if @mode == :relational
+					dictionary_entry = dictionary_entry.keys.join(@separator) if @mode == :relational and not @lines
 					unless @concise then
-						digest << "#{id}\t#{word_or_compound}\t#{offset.to_s}\t#{boundary.to_s}\t#{dictionary_entry}"
+						if @mode == :relational and @lines then
+							dictionary_entry.each_key { |entry|
+								digest << "#{id}\t#{word_or_compound}\t#{offset.to_s}\t#{boundary.to_s}\t#{entry}"
+							}
+						else
+							digest << "#{id}\t#{word_or_compound}\t#{offset.to_s}\t#{boundary.to_s}\t#{dictionary_entry}"
+						end
 					else
-						digest << "#{id}\t#{word_or_compound}\t#{dictionary_entry}"
+						if @mode == :relational and @lines then
+							dictionary_entry.each_key { |entry|
+								digest << "#{id}\t#{word_or_compound}\t#{entry}"
+							}
+						else
+							digest << "#{id}\t#{word_or_compound}\t#{dictionary_entry}"
+						end
 					end
 				end
 			end
