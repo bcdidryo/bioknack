@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 
 require 'optparse'
+require 'set'
 require 'thread'
 
 @sentence_chunks = /\W|\w+/
@@ -53,10 +54,10 @@ def distribute(dictionary_entry, xref)
 	when :relational
 		set = arity_dictionary[key]
 		unless set then
-			set = {}
+			set = Set.new
 			arity_dictionary[key] = set
 		end
-		set[xref] = true
+		set.add(xref)
 	else
 		raise 'Unknown mode. Check the comments to @mode in the source.'
 	end
@@ -186,7 +187,7 @@ def munch(line, digest)
 					dictionary_entry = dictionary_entry.keys.join(@separator) if @mode == :relational and not @lines
 					unless @concise then
 						if @mode == :relational and @lines then
-							dictionary_entry.each_key { |entry|
+							dictionary_entry.each { |entry|
 								digest << "#{id}\t#{word_or_compound}\t#{offset.to_s}\t#{boundary.to_s}\t#{entry}"
 							}
 						else
@@ -194,7 +195,7 @@ def munch(line, digest)
 						end
 					else
 						if @mode == :relational and @lines then
-							dictionary_entry.each_key { |entry|
+							dictionary_entry.each { |entry|
 								digest << "#{id}\t#{word_or_compound}\t#{entry}"
 							}
 						else
