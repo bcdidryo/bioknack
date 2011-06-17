@@ -32,6 +32,11 @@ require 'thread'
 # Separator used to fuse values when @mode is :relational
 @separator = "\t"
 
+# Stop string can be a chunk that should be treated as a "end-of-compound"
+# marker. If not nil, then matching sentence chunks need to be terminated
+# by this string or they are ignored.
+@stop = ";"
+
 @threads = 4
 @consecutive_reads = 1000
 @consecutive_writes = 1000
@@ -93,6 +98,8 @@ def print_help()
 	puts ''
 	puts 'NCBI Gene Data:'
 	puts '  ftp://ftp.ncbi.nih.gov/gene/DATA/gene_info.gz'
+	puts 'RefSeq Gene Data (substitute XX with the latest release):'
+	puts '  ftp://ftp.ncbi.nih.gov/refseq/release/release-catalog/releaseXX.accession2geneid.gz'
 end
 
 options = OptionParser.new { |option|
@@ -164,6 +171,8 @@ dictionary_file.close
 def munch(line, digest)
         id, text = line.split("\t", 2)
 
+	return unless text
+
 	seen_entries = {} if @brief
 	offset = 0
 	text.downcase!
@@ -173,6 +182,11 @@ def munch(line, digest)
 		arity = @lookahead_min[words[0]]
 		while arity and arity <= max_arity
 			word_or_compound = words[0..arity - 1].join()
+
+			if @stop and arity < max_arity and not words[arity] == @stop then
+				arity += 1
+				next
+			end
 
 			word_arity = @lookahead[word_or_compound]
 			break unless word_arity

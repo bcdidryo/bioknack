@@ -4,7 +4,7 @@ require 'optparse'
 
 filter_column = 4 - 1
 filter_non_words = true
-split_compounds = true
+split_compounds = false
 
 options = OptionParser.new { |option|
 	option.on('-c', '--column COLUMN') { |column| filter_column = column.to_i - 1 }

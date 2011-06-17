@@ -11,14 +11,20 @@ end
 STDIN.each { |line|
 	next if line.start_with?('#')
 
-	tax, gene, symbol, ignore, synonyms, ignore, ignore, ignore, description = line.split("\t")
+	tax, gene, symbol, ignore, synonyms, ignore, ignore, ignore,
+		description, ignore, external_symbol, external_name, ignore,
+		other_designations = line.split("\t")
+
+	next if symbol == 'NEWENTRY'
 
 	symbol = symbol.split('|')
 	synonyms = synonyms.split('|')
-	description = description.split(/[^ a-zA-Z0-9\-'()]/)
+	external_symbol = [ external_symbol ]
+	external_name = [ external_name ]
 
 	print(symbol, tax, gene)
 	print(synonyms, tax, gene)
-	print(description, tax, gene)
+	print(external_symbol, tax, gene)
+	print(external_name, tax, gene)
 }
 
