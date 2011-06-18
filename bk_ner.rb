@@ -32,10 +32,10 @@ require 'thread'
 # Separator used to fuse values when @mode is :relational
 @separator = "\t"
 
-# Stop string can be a chunk that should be treated as a "end-of-compound"
+# The @delimiter string can be a chunk that should be treated as a "end-of-compound"
 # marker. If not nil, then matching sentence chunks need to be terminated
 # by this string or they are ignored.
-@stop = ";"
+@delimiter = nil
 
 @threads = 4
 @consecutive_reads = 1000
@@ -79,17 +79,22 @@ end
 
 def print_help()
 	puts 'Usage: bk_ner.rb [options] database dictionary'
-	puts 'Options:'
+	puts 'General Options:'
 	puts '  -b | --brief                    : do not repeat matched dictionary entries (per document)'
 	puts '  -c | --concise                  : do not output character positions'
+	puts '  -d CHAR | --delimiter CHAR      : match only full-length words/compounds between the delimiter'
+	puts '                                    (lines in the corpus need to end on the delimiter, or the'
+	puts '                                    last entry will not be matched)'
+	puts '  -l | --lines                    : write multiple dictionary matches on separate lines'
 	puts '  -m MODE | --mode MODE           : dictionary key/value mapping (default: ' << @mode.to_s << ')'
 	puts '                                    values for MODE:'
 	puts '                                      functional - 1:1 mapping between keys and values'
 	puts '                                      relational - 1:n mapping between keys and values'
-	puts '  -l | --lines                    : write multiple dictionary matches on separate lines'
-	puts '  -s CHAR | --separator CHAR      : character to use to join multiple values with'
+	puts '  -s CHAR | --separator CHAR      : character to use to join multiple values in the output'
 	puts '                                    when MODE is :relational and -l is not used'
 	puts '                                    (default: \t (tabulator))'
+	puts ''
+	puts 'Performance Options:'
 	puts '  -t THREADS | --threads THREADS  : number of threads (default: ' << @threads.to_s << ')'
 	puts '  -r READS | --reads READS        : consecutive reads (default: ' << @consecutive_reads.to_s << ')'
 	puts '  -w WRITES | --writes WRITES     : consecutive writes (default: ' << @consecutive_writes.to_s << ')'
@@ -105,6 +110,7 @@ end
 options = OptionParser.new { |option|
 	option.on('-b', '--brief') { @brief = true }
 	option.on('-c', '--concise') { @concise = true }
+	option.on('-d', '--delimiter CHAR') { |char| @delimiter = char }
 	option.on('-m', '--mode MODE') { |m|
 		case m
 		when 'functional'
@@ -183,7 +189,7 @@ def munch(line, digest)
 		while arity and arity <= max_arity
 			word_or_compound = words[0..arity - 1].join()
 
-			if @stop and arity < max_arity and not words[arity] == @stop then
+			if @delimiter and arity < max_arity and not words[arity] == @delimiter then
 				arity += 1
 				next
 			end
@@ -219,8 +225,16 @@ def munch(line, digest)
 				end
 			end
 
+			arity = max_arity if @delimiter
 			arity += 1
 		end
+
+		# If a delimiter is given, move forward to the next full-length word/compound:
+		while @delimiter and words.length > 1 and not words[0] == @delimiter
+			offset += words[0].length
+			words.shift
+		end
+
 		offset += words[0].length
 		words.shift
 	end
