@@ -4,6 +4,7 @@ def print(list, tax, gene)
 	list.each { |item|
 		item.strip!
 		next if item.empty? or item == '-'
+		item.gsub!('-', ' ')
 		puts "#{item}\t#{tax}|#{gene}"
 	}
 end

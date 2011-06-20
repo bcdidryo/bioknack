@@ -1,6 +1,19 @@
 #!/usr/bin/ruby
 
-k = 50
+require 'optparse'
+
+with_annotation = false
+
+options = OptionParser.new { |option|
+	option.on('-a', '--annotation') { with_annotation = true }
+}
+
+begin
+	options.parse!
+rescue OptionParser::InvalidOption
+	print_help()
+	exit
+end
 
 ner_file_name = ARGV[0]
 standard_file_name = ARGV[1]
@@ -56,14 +69,14 @@ documents.keys.each { |document|
 		next unless key.start_with?("#{document}|")
 
 		if entity2relevance[key] then
-			document_tap.write("1\t#{entity2score[key]}\n")
+			document_tap.write("1\t#{entity2score[key]}")
 		else
-			document_tap.write("0\t#{entity2score[key]}\n")
+			document_tap.write("0\t#{entity2score[key]}")
 		end
-	}
 
-	k.times {
-		document_tap.write("0\t0\n")
+		document_tap.write("\t#{key}") if with_annotation
+
+		document_tap.write("\n")
 	}
 
 	document_tap.close()

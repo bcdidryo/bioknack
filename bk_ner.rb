@@ -37,13 +37,16 @@ require 'thread'
 # by this string or they are ignored.
 @delimiter = nil
 
+# Whether to be case sensitive or not.
+@case_sensitive = false
+
 @threads = 4
 @consecutive_reads = 1000
 @consecutive_writes = 1000
 
 # Creates dictionary entries and associates 'xref' with the dictionary entry.
 def distribute(dictionary_entry, xref)
-	dictionary_entry.downcase!
+	dictionary_entry.downcase! unless @case_sensitive
 	words = dictionary_entry.scan(@sentence_chunks)
 	arity = words.length
 
@@ -93,6 +96,7 @@ def print_help()
 	puts '  -s CHAR | --separator CHAR      : character to use to join multiple values in the output'
 	puts '                                    when MODE is :relational and -l is not used'
 	puts '                                    (default: \t (tabulator))'
+	puts '  -x | --casesensitive            : case sensitive dictionary matching'
 	puts ''
 	puts 'Performance Options:'
 	puts '  -t THREADS | --threads THREADS  : number of threads (default: ' << @threads.to_s << ')'
@@ -126,6 +130,7 @@ options = OptionParser.new { |option|
 	option.on('-t', '--threads THREADS') { |threads_no| @threads = threads_no.to_i }
 	option.on('-r', '--reads READS') { |reads| @consecutive_reads = reads.to_i }
 	option.on('-w', '--writes WRITES') { |writes| @consecutive_writes = writes.to_i }
+	option.on('-x', '--casesensitive') { @case_sensitive = true }
 }
 
 begin
@@ -181,7 +186,7 @@ def munch(line, digest)
 
 	seen_entries = {} if @brief
 	offset = 0
-	text.downcase!
+	text.downcase! unless @case_sensitive
 	words = text.scan(@sentence_chunks)
 	return unless words
 	while (max_arity = words.length) > 0
