@@ -107,7 +107,7 @@ if [ ! -d $input_xml ] ; then
 	error=1
 fi
 
-if [ error ] ; then
+if [[ error -eq "1" ]] ; then
 	echo "Okay... there were some errors. Bailing out."
 	echo "Having said that: do not run this script in the bioknack directory."
 	echo "Instead, 'cd ..' and create a symbolic to: bioknack/run_bc3_ner.sh"
