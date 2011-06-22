@@ -2,10 +2,6 @@
 
 # Requirements:
 #
-# bioknack
-#   - expected in ./bioknack
-#   - git clone https://github.com/joejimbo/bioknack
-#
 # NCBI's Entrez Gene Catalogue
 #   - expected in ./$entrez
 #   - wget ftp://ftp.ncbi.nih.gov/gene/DATA/gene_info.gz (and gunzip...)
@@ -19,22 +15,20 @@
 #   - expected in ./$species_dict
 #   - wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz (and untar...)
 #
-# BioCreative 3
-#   - XML documents expected in ./$input_xml
-#   - from http://www.biocreative.org/news/corpora/biocreative-iii-corpus/ get either
+# Input documents for the text-mining/gene-normalisation
+#   - *.{nxml,xml,txt} documents expected in ./$input_dir
+#   - for running on the BioCreative 3 documents either use run_bc3_ner.sh or visit
+#     http://www.biocreative.org/news/corpora/biocreative-iii-corpus/ and get either
 #     - http://www.biocreative.org/media/store/files/2010/BC3GNTraining_.zip
 #     - http://www.biocreative.org/media/store/files/2010/BC3GNTest.zip
 
 # Results
 #
-# BioCreative 3 Format
-#   - written to ./$result_file
-#   - TSV
-#     1. PubMed Central ID
-#     2. Entrez Gene ID
-#     3. Score
-
-PATH=$PATH:`pwd`/bioknack
+# - written to ./$result_file
+# - TSV
+#   1. PubMed Central ID
+#   2. Entrez Gene ID
+#   3. Score
 
 entrez=gene_info
 refseq=refseq
@@ -44,7 +38,7 @@ english_dict=dict
 
 tmp_dir=bc3/bioknack
 corpus=$tmp_dir/corpus
-input_xml=bc3/BC3GNTest/xmls
+input_dir=bc3/BC3GNTest/xmls
 result_file=bc3gn_bioknack
 
 # On Mac OSX either run `sudo port install gawk` or set to 'awk'
@@ -102,8 +96,11 @@ if [ ! -f $species_dict/names.dmp ] ; then
 	error=1
 fi
 
-if [ ! -d $input_xml ] ; then
-	echo "Missing directory: $input_xml"
+if [ ! -d $input_dir ] ; then
+	echo "Missing directory: $input_dir"
+	echo "Expecting *.{nxml,xml,txt} documents in that directory for corpus generation."
+	echo "If you want to run the BioCreative 3 evaluation, either use run_bc3_ner.sh or"
+	echo "get/extract the BioCreative 3 documents from:"
 	echo "Get it via: http://www.biocreative.org/media/store/files/2010/BC3GNTest.zip"
 	echo ""
 
@@ -121,7 +118,7 @@ fi
 echo "Generating corpus..."
 rm -f $corpus
 echo " - extracting italicised text"
-for i in $input_xml/*.nxml ; do
+for i in $input_xml/*.{nxml,xml,txt} ; do
 	pmcid=`basename $i .nxml`
 	echo -e -n "$pmcid\t" >> $corpus
 	grep -o -E '<italic>[^<]+</' $i | sed 's/<italic>//' | sed 's/<\///' \
