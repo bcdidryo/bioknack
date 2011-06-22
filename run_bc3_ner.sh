@@ -51,6 +51,9 @@ result_file=bc3gn_bioknack
 awk_interpreter=gawk
 ruby_interpreter=ruby
 
+# Number of top-$cutoff results that make it into the final output
+cutoff=100
+
 entity_regexp='[ .,;?]([A-Z][a-zA-Z0-9_\-]*[A-Z][a-zA-Z0-9_\-]*|[a-z]+[0-9A-Z_\-][a-zA-Z0-9_\-])[ .,;?]|\([a-zA-Z0-9_\-]{2,}\)'
 stop_regexp='^(et al\.?|[Ii]n vi(tr|v)o|.+ [a-z]+(ed|ing)|.*DNA.*|.*PCR.*|.*RNA.*|I|II|III|IV|V|VI|VII|VIII|IX|X|Y|ORF)$'
 
@@ -186,6 +189,7 @@ echo "Merging gene dictionaries..."
 sort $tmp_dir/entrez_genes $tmp_dir/refseq_genes | uniq > $tmp_dir/genes
 
 # You might want to comment in the $gene_prefix splitting below, if you run out of memory.
+# Note: if you do so, then adjust the wildcard under "Scoring results..." too!
 echo "Partitioning gene dictionary..."
 for prefix in {1,2,3,4,5,6,7,8,9} ; do
 	echo " - processing taxonomies starting with prefix $prefix"
@@ -211,7 +215,7 @@ for dictionary in $tmp_dir/species_* ; do
 done
 
 echo "Scoring results..."
-cat $tmp_dir/bk_genes_* | $awk_interpreter -F "\t" '{print $1"\t"$3"\t"$2}' \
+cat $tmp_dir/bk_genes_? | $awk_interpreter -F "\t" '{print $1"\t"$3"\t"$2}' \
 	| sort -k 1,2 | uniq -c | $awk_interpreter -F "\t" '{
 			split($1, x, " ");
 			print (x[1]*length($3))"\t"x[2]"\t"$2"\t"$3
@@ -233,10 +237,13 @@ echo "Joining results and species dictionary..."
 join -t "	" -1 1 -2 1 $tmp_dir/bk_genes_scored_for_join \
 	$tmp_dir/bk_species_for_join | sort -r -n -k 2 > $tmp_dir/bk_genes_species_score
 
-echo "Filtering for occurrence threshold..."
-$awk_interpreter -F "\t|[|]" '{print $1"\t"$4"\t"$3}' $tmp_dir/bk_genes_species_score | uniq > $result_file
-# This additional grep can be used to filter out matches that hit only once or twice:
-#| grep -v -E '[^ 0123456789](1|2)$' > $result_file
+echo "Filtering top results..."
+for i in `cut -f 1 $tmp_dir/bk_genes_species_score | sort -n | uniq` ; do
+	grep -E "^$i" $tmp_dir/bk_genes_species_score | head -n $cutoff > $tmp_dir/bk_genes_species_score_$cutoff
+done
+
+echo "Writing BioCreative 3 NER results..."
+$awk_interpreter -F "\t|[|]" '{print $1"\t"$4"\t"$3}' $tmp_dir/bk_genes_species_score_$cutoff | uniq > $result_file
 
 echo "Output file: $result_file"
 echo "Done. Have a nice day."
