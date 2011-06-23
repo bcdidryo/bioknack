@@ -237,14 +237,15 @@ echo "Joining results and species dictionary..."
 join -t "	" -1 1 -2 1 $tmp_dir/bk_genes_scored_for_join \
 	$tmp_dir/bk_species_for_join | sort -r -n -k 2 > $tmp_dir/bk_genes_species_score
 
-echo "Filtering top results..."
-rm -f $tmp_dir/bk_genes_species_score_$cutoff
-for document_id in `cut -f 1 $tmp_dir/bk_genes_species_score | sort -n | uniq` ; do
-	grep -E "^$document_id" $tmp_dir/bk_genes_species_score | head -n $cutoff >> $tmp_dir/bk_genes_species_score_$cutoff
-done
+echo "Compressing results to document ID, gene ID and score only..."
+$awk_interpreter -F "\t|[|]" '{print $1"\t"$4"\t"$3}' $tmp_dir/bk_genes_species_score \
+	| uniq > $tmp_dir/bk_documents_genes_score
 
-echo "Writing BioCreative 3 NER results..."
-$awk_interpreter -F "\t|[|]" '{print $1"\t"$4"\t"$3}' $tmp_dir/bk_genes_species_score_$cutoff | uniq > $result_file
+echo "Writing BioCreative 3 NER results w/ tail cutoff after $cutoff hits..."
+rm -f $result_file
+for document_id in `cut -f 1 $tmp_dir/bk_documents_genes_score | sort -n | uniq` ; do
+	grep -w -E "^$document_id" $tmp_dir/bk_documents_genes_score | head -n $cutoff >> $result_file
+done
 
 echo "Output file: $result_file"
 echo "Done. Have a nice day."
