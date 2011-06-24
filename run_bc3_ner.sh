@@ -36,15 +36,14 @@
 
 PATH=$PATH:`pwd`/bioknack
 
-entrez=gene_info
-refseq=refseq
+entrez=dictionaries
+refseq=dictionaries
 refseq_version=*
-species_dict=taxdmp
-english_dict=dict
+species_dict=dictionaries
 
-tmp_dir=bc3/bioknack
+tmp_dir=tmp
 corpus=$tmp_dir/corpus
-input_xml=bc3/BC3GNTest/xmls
+input_xml=BC3GNTest/xmls
 result_file=bc3gn_bioknack
 
 # On Mac OSX either run `sudo port install gawk` or set to 'awk'
@@ -237,9 +236,10 @@ echo "Joining results and species dictionary..."
 join -t "	" -1 1 -2 1 $tmp_dir/bk_genes_scored_for_join \
 	$tmp_dir/bk_species_for_join | sort -r -n -k 2 > $tmp_dir/bk_genes_species_score
 
-echo "Compressing results to document ID, gene ID and score only..."
+echo "Compressing and accumulating document IDs, gene IDs and scores..."
 $awk_interpreter -F "\t|[|]" '{print $1"\t"$4"\t"$3}' $tmp_dir/bk_genes_species_score \
-	| uniq > $tmp_dir/bk_documents_genes_score
+	| sort | uniq | ./bioknack/bk_ner_accumulate_score.rb \
+	| sort -r -n -k 3 > $tmp_dir/bk_documents_genes_score
 
 echo "Writing BioCreative 3 NER results w/ tail cutoff after $cutoff hits..."
 rm -f $result_file
