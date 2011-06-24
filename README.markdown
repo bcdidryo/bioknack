@@ -163,18 +163,4 @@ the programs.
       * lines beginning with `*` denote statistical output
     * `./bk_ner_eval_bionlp09.rb -t -f 2.0 10089566.a1 10089566.entities`
       * outputs tab-separated values for precision, recall and F_2.0 score
-* **bk_intersection.rb**
-  * Outputs the line-based intersection of two files.
-  * **Example:**
-    * `file_a` contains the lines
-      * 123
-      * 123
-      * 789
-    * `file_b` contains the lines
-      * 123
-      * 456
-      * 789
-    * `bk_intersection.rb file_a file_b` outputs the following lines:
-      * 123
-      * 789
 
