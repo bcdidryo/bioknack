@@ -47,6 +47,7 @@ entrez=dictionaries
 refseq=dictionaries
 refseq_version=*
 species_dict=dictionaries
+obo_dict=dictionaries
 
 tmp_dir=tmp
 corpus=$tmp_dir/corpus
@@ -132,6 +133,13 @@ if [ "$1" = 'pmc' ] ; then
 	for i in $input_dir/*.tar.gz ; do
 		tar xzf $i -C $input_dir
 	done
+fi
+
+if [ "$1" = 'obo' ] ; then
+	wget -P $obo_dict http://diseaseontology.svn.sourceforge.net/viewvc/\*checkout\*/diseaseontology/trunk/HumanDO.obo
+	wget -P $obo_dict http://obo.cvs.sourceforge.net/viewvc/obo/obo/ontology/genomic-proteomic/gene_ontology_edit.obo
+	cat $obo_dict/*.obo | bk_ner_fmt_obo.rb > $obo_dict/ontologies
+	rm -f $obo_dict/*.obo
 fi
 
 if [ "$1" = 'all' ] || [ "$1" = 'corpus' ] ; then
