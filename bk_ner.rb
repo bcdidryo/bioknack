@@ -37,6 +37,13 @@ require 'thread'
 # by this string or they are ignored.
 @delimiter = nil
 
+# Replaces occurrences of the string @regexper with @replacement and then
+# runs the entity recognition on that regular expression. Has to be used with
+# -c, because the character position are not determined anymore to achieve good
+# performance still.
+@regexper = nil
+@replacement = '\W(.*\W)?'
+
 # Whether to be case sensitive or not.
 @case_sensitive = false
 
@@ -97,6 +104,11 @@ def print_help()
 	puts '                                    when MODE is :relational and -l is not used'
 	puts '                                    (default: \t (tabulator))'
 	puts '  -x | --casesensitive            : case sensitive dictionary matching'
+	puts '  -y | --regexper CHAR            : replaces the given character (or string) in the'
+	puts '                                    dictionary entries with ' << @replacement << ' and then'
+	puts '                                    matches documents against the resulting regular expression'
+	puts '                                    (has to be used with -c, because character positions are'
+	puts '                                    no longer determined to achieve good performance)'
 	puts ''
 	puts 'Performance Options:'
 	puts '  -t THREADS | --threads THREADS  : number of threads (default: ' << @threads.to_s << ')'
@@ -131,6 +143,7 @@ options = OptionParser.new { |option|
 	option.on('-r', '--reads READS') { |reads| @consecutive_reads = reads.to_i }
 	option.on('-w', '--writes WRITES') { |writes| @consecutive_writes = writes.to_i }
 	option.on('-x', '--casesensitive') { @case_sensitive = true }
+	option.on('-y', '--regexper CHAR') { |char| @regexper = char }
 }
 
 begin
@@ -159,25 +172,50 @@ dictionary_file = File.open(dictionary_file_name, 'r')
 xref_alternative = ""
 
 dictionary_file.each { |line|
-	token, xref = line.split("\t", 2)
+	entity, xref = line.split("\t", 2)
 
 	if xref then
 		if @mode == :functional then
 			xref.chomp!
-			distribute(token, xref)
+			distribute(entity, xref)
 		else
 			xref.split("\t").each { |xref_n|
 				xref_n.chomp!
-				distribute(token, xref_n)
+				distribute(entity, xref_n)
 			}
 		end
 	else
-		token.chomp!
-		distribute(token, xref_alternative)
+		entity.chomp!
+		distribute(entity, xref_alternative)
 	end
 }
 
 dictionary_file.close
+
+def output_recognition(id, dictionary_entry, seen_entries, word_or_compound, offset, digest)
+	if !@brief or !seen_entries[word_or_compound] then
+		seen_entries[word_or_compound] = true if @brief
+		boundary = offset + word_or_compound.length - 1
+		dictionary_entry = dictionary_entry.keys.join(@separator) if @mode == :relational and not @lines
+		unless @concise then
+			if @mode == :relational and @lines then
+				dictionary_entry.each { |entry|
+					digest << "#{id}\t#{word_or_compound}\t#{offset.to_s}\t#{boundary.to_s}\t#{entry}"
+				}
+			else
+				digest << "#{id}\t#{word_or_compound}\t#{offset.to_s}\t#{boundary.to_s}\t#{dictionary_entry}"
+			end
+		else
+			if @mode == :relational and @lines then
+				dictionary_entry.each { |entry|
+					digest << "#{id}\t#{word_or_compound}\t#{entry}"
+				}
+			else
+				digest << "#{id}\t#{word_or_compound}\t#{dictionary_entry}"
+			end
+		end
+	end
+end
 
 def munch(line, digest)
         id, text = line.split("\t", 2)
@@ -189,44 +227,38 @@ def munch(line, digest)
 	text.downcase! unless @case_sensitive
 	words = text.scan(@sentence_chunks)
 	return unless words
+	word_or_compound = nil
+	word_or_compound = text if @regexper
 	while (max_arity = words.length) > 0
-		arity = @lookahead_min[words[0]]
+		arity = 0
+		arity = @lookahead_min[words[0]] unless @regexper
 		while arity and arity <= max_arity
-			word_or_compound = words[0..arity - 1].join()
-
 			if @delimiter and arity < max_arity and not words[arity] == @delimiter then
 				arity += 1
 				next
 			end
 
-			word_arity = @lookahead[word_or_compound]
-			break unless word_arity
-			max_arity = word_arity if word_arity < max_arity
+			unless @regexper then
+				word_or_compound = words[0..arity - 1].join()
+				word_arity = @lookahead[word_or_compound]
+				break unless word_arity
+				max_arity = word_arity if word_arity < max_arity
+			end
 
 			arity_dictionary = @dictionary[arity]
 			if arity_dictionary then
-				dictionary_entry = arity_dictionary[word_or_compound]
-				if dictionary_entry and (!@brief or !seen_entries[word_or_compound]) then
-					seen_entries[word_or_compound] = true if @brief
-					boundary = offset + word_or_compound.length - 1
-					dictionary_entry = dictionary_entry.keys.join(@separator) if @mode == :relational and not @lines
-					unless @concise then
-						if @mode == :relational and @lines then
-							dictionary_entry.each { |entry|
-								digest << "#{id}\t#{word_or_compound}\t#{offset.to_s}\t#{boundary.to_s}\t#{entry}"
-							}
-						else
-							digest << "#{id}\t#{word_or_compound}\t#{offset.to_s}\t#{boundary.to_s}\t#{dictionary_entry}"
-						end
-					else
-						if @mode == :relational and @lines then
-							dictionary_entry.each { |entry|
-								digest << "#{id}\t#{word_or_compound}\t#{entry}"
-							}
-						else
-							digest << "#{id}\t#{word_or_compound}\t#{dictionary_entry}"
-						end
-					end
+				dictionary_entry = nil
+				unless @regexper then
+					dictionary_entry = arity_dictionary[word_or_compound]
+					output_recognition(id, dictionary_entry, seen_entries, word_or_compound, offset, digest) if dictionary_entry
+				else
+					arity_dictionary.keys.each { |entity|
+						regexp = entity.gsub(@regexper, @replacement)
+						matches = word_or_compound.scan(Regexp.new(regexp))
+						matches.each {
+							output_recognition(id, arity_dictionary[entity], seen_entries, entity, offset, digest)
+						}
+					}
 				end
 			end
 
@@ -241,7 +273,11 @@ def munch(line, digest)
 		end
 
 		offset += words[0].length
-		words.shift
+		unless @regexper then
+			words.shift
+		else
+			words.clear
+		end
 	end
 end
 

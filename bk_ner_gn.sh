@@ -38,7 +38,7 @@ fi
 # all corpus species genes ner score
 if [ "$1" != 'all' ] && [ "$1" != 'corpus' ] && [ "$1" != 'species' ] && [ "$1" != 'genes' ] \
 	&& [ "$1" != 'ner' ] && [ "$1" != 'score' ] \
-	&& [ "$1" != 'pmc' ] ; then
+	&& [ "$1" != 'pmc' ] && [ "$1" != 'obo' ] ; then
 	echo "TODO: help message"
 	exit
 fi
@@ -66,6 +66,8 @@ stop_regexp='^(et al\.?|[Ii]n vi(tr|v)o|.+ [a-z]+(ed|ing)|.*DNA.*|.*PCR.*|.*RNA.
 
 entity_regexp_type=-E
 stop_regexp_type=-E
+
+PATH=$PATH:./bioknack
 
 # ALTERNATIVE RUBY ENGINE
 #
@@ -244,6 +246,12 @@ if [ "$1" = 'all' ] || [ "$1" = 'ner' ] ; then
 		$ruby_interpreter ./bioknack/bk_ner.rb -c -m relational -l -d ";" $tmp_dir/corpus $dictionary \
 			> $tmp_dir/bk_`basename $dictionary`
 	done
+	if [ -f $obo_dict/ontologies ] ; then
+		echo " - processing ontologies"
+		# TODO
+		#$ruby_interpreter ./bioknack/bk_ner.rb -c -m relational -l -d ";" $tmp_dir/corpus $dictionary \
+		#	> $tmp_dir/bk_`basename $dictionary`
+	fi
 fi
 
 if [ "$1" = 'all' ] || [ "$1" = 'score' ] ; then
