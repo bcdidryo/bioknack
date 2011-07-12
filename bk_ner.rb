@@ -41,8 +41,15 @@ require 'thread'
 # runs the entity recognition on that regular expression. Has to be used with
 # -c, because the character position are not determined anymore to achieve good
 # performance still.
+# @regexper_prefix and @regexper_suffix are surrounding the regular expression
+# to ensure that we start matching entities on word boundaries.
+# @regexper_dictionary contains the Regexp instance that is used for the matching
+# in the text.
 @regexper = nil
-@replacement = '\W(.*\W)?'
+@regexper_prefix = '(^|[ .,;:!?])'
+@regexper_suffix = '($|[ .,;:!?])'
+@replacement = '\W([^.!?]+\W)?'
+@regexper_dictionary = {}
 
 # Whether to be case sensitive or not.
 @case_sensitive = false
@@ -85,6 +92,12 @@ def distribute(dictionary_entry, xref)
 		@lookahead[prefix] = arity unless @lookahead.has_key?(prefix)
 		@lookahead[prefix] = arity if @lookahead[prefix] < arity
 	}
+
+	if @regexper then
+		dictionary_entry_regexped = Regexp.escape(dictionary_entry).gsub(@regexper, @replacement)
+		@regexper_dictionary[dictionary_entry] =
+			Regexp.new("#{@regexper_prefix}#{dictionary_entry_regexped}#{@regexper_suffix}")
+	end
 end
 
 def print_help()
@@ -230,7 +243,7 @@ def munch(line, digest)
 	word_or_compound = nil
 	word_or_compound = text if @regexper
 	while (max_arity = words.length) > 0
-		arity = 0
+		arity = 1 if @regexper
 		arity = @lookahead_min[words[0]] unless @regexper
 		while arity and arity <= max_arity
 			if @delimiter and arity < max_arity and not words[arity] == @delimiter then
@@ -253,9 +266,10 @@ def munch(line, digest)
 					output_recognition(id, dictionary_entry, seen_entries, word_or_compound, offset, digest) if dictionary_entry
 				else
 					arity_dictionary.keys.each { |entity|
-						regexp = entity.gsub(@regexper, @replacement)
-						matches = word_or_compound.scan(Regexp.new(regexp))
-						matches.each {
+						regexp = @regexper_dictionary[entity]
+						matches = word_or_compound.scan(regexp).map { |matches| matches[0] }
+						matches.each { |match|
+							next unless match
 							output_recognition(id, arity_dictionary[entity], seen_entries, entity, offset, digest)
 						}
 					}

@@ -3,6 +3,12 @@
 is_term = false
 id = nil
 
+def unfold(synonym)
+	return [synonym] unless synonym.match(/^\([^)]+\) or \(.+\)$/)
+
+	return synonym.scan(/\(([^)]+)\)/).flatten
+end
+
 STDIN.each { |line|
 	line.chomp!
 
@@ -14,6 +20,6 @@ STDIN.each { |line|
 	next unless id
 
 	puts "#{line['name: '.length..line.length-1]}\t#{id}" if line.start_with?('name: ')
-	puts "#{line.match(/\"([^"]+)\"/)[1]}\t#{id}" if line.start_with?('synonym: ')
+	unfold(line.match(/\"([^"]+)\"/)[1]).each { |synonym| puts "#{synonym}\t#{id}" } if line.start_with?('synonym: ')
 }
 
