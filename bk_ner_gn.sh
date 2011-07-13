@@ -33,7 +33,7 @@
 #     2. gene/species/term ID
 #     3. score
 
-if [[ $# -ne 1 ]] ; then
+if [[ $# -lt 1 ]] || [[ $# -gt 2 ]] ; then
 	echo "TODO: help message"
 	exit
 fi
@@ -44,6 +44,17 @@ if [ "$1" != 'all' ] && [ "$1" != 'corpus' ] && [ "$1" != 'species' ] && [ "$1" 
 	&& [ "$1" != 'minimal' ] && [ "$1" != 'pmc' ] && [ "$1" != 'obo' ] ; then
 	echo "TODO: help message"
 	exit
+fi
+
+# Format of the input files (determines file suffix too):
+format=nxml
+
+if [[ $# -eq 2 ]] ; then
+	if [ "$2" != 'nxml' ] && [ "$2" != 'xml' ] && [ "$2" != 'txt' ] ; then
+		echo "TODO: help message"
+		exit
+	fi
+	format=$2
 fi
 
 # One directory for all the directories. You can modify specific paths down below.
@@ -171,6 +182,8 @@ if [[ error -eq "1" ]] ; then
 fi
 
 if [ "$1" = 'minimal' ] ; then
+	rm -f $entrez/gene_info.gz $entrez/gene_info $refseq/release$refseq_version.accession2geneid.gz \
+		$refseq/release$refseq_version.accession2geneid $species_dict/taxdump.tar.gz $species_dict/*.dmp
 	echo "Downloading minimal set of dictionaries..."
 	echo " - Entrez gene"
 	wget -P $entrez ftp://ftp.ncbi.nih.gov/gene/DATA/gene_info.gz
@@ -185,14 +198,19 @@ if [ "$1" = 'minimal' ] ; then
 fi
 
 if [ "$1" = 'pmc' ] ; then
+	rm -f $input_dir/articles.*.tar.gz
+	for directory in $input_dir/* ; do
+		if [ -d "$directory" ] ; then rm -rf "$directory" ; fi
+	done
 	echo "Downloading PubMed Central archives..."
 	wget -P $input_dir ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/articles.*.tar.gz
-	for i in $input_dir/*.tar.gz ; do
+	for i in $input_dir/articles.*.tar.gz ; do
 		tar xzf $i -C $input_dir
 	done
 fi
 
 if [ "$1" = 'obo' ] ; then
+	rm -rf $obo_dict/HumanDO.obo $obo_dict/gene_ontology_edit.obo
 	echo "Downloading (some) OBOs..."
 	wget -P $obo_dict http://diseaseontology.svn.sourceforge.net/viewvc/\*checkout\*/diseaseontology/trunk/HumanDO.obo
 	wget -P $obo_dict http://obo.cvs.sourceforge.net/viewvc/obo/obo/ontology/genomic-proteomic/gene_ontology_edit.obo
@@ -209,9 +227,9 @@ if [ "$1" = 'all' ] || [ "$1" = 'corpus' ] ; then
 	echo " - extracting italicised text"
 	for i in $input_dir/*.{nxml,xml,txt} ; do
 		if [ ! -f "$i" ] && [ ! -h "$i" ] ; then continue ; fi
-		pmcid=`basename $i .nxml`
+		pmcid=`basename "$i" .$format`
 		echo -e -n "$pmcid\t" >> $chunky_corpus
-		grep -o -E '<italic>[^<]+</' $i | sed 's/<italic>//' | sed 's/<\///' \
+		grep -o -E '<italic>[^<]+</' "$i" | sed 's/<italic>//' | sed 's/<\///' \
 			| sed -E 's/(^ +| +$)//g' | sed 's/-/ /g' \
 			| grep -v $stop_regexp_type "$stop_regexp" \
 			| sed 's/$/;/' \
@@ -221,9 +239,9 @@ if [ "$1" = 'all' ] || [ "$1" = 'corpus' ] ; then
 	echo " - extracting words/compounds with two or more uppercase letters"
 	for i in $input_dir/*.{nxml,xml,txt} ; do
 		if [ ! -f "$i" ] && [ ! -h "$i" ] ; then continue ; fi
-		pmcid=`basename $i .nxml`
+		pmcid=`basename "$i" .$format`
 		echo -e -n "$pmcid\t" >> $chunky_corpus
-		grep -o $entity_regexp_type "$entity_regexp" $i \
+		grep -o $entity_regexp_type "$entity_regexp" "$i" \
 			| sed 's/^.//' | sed 's/.$//' | sed 's/-/ /' | sed 's/(^ +| +$)//g' \
 			| grep -v $stop_regexp_type "$stop_regexp" \
 			| sort | uniq | tr '\n' ';' | tr -d '\n' >> $chunky_corpus
@@ -234,9 +252,14 @@ if [ "$1" = 'all' ] || [ "$1" = 'corpus' ] ; then
 		echo " - extracting sentences"
 		for i in $input_dir/*.{nxml,xml,txt} ; do
 			if [ ! -f "$i" ] && [ ! -h "$i" ] ; then continue ; fi
-			pmcid=`basename $i .nxml`
+			pmcid=`basename "$i" .$format`
 			echo -e -n "$pmcid\t" >> $sentence_corpus
-			<$i tr -d '\n' >> $sentence_corpus
+			if [ "$format" = 'txt' ] ; then
+				<"$i" tr -d '\n' >> $sentence_corpus
+			else
+				<"$i" bk_ner_extract_tag.rb '<body>' '</body>' \
+					| tr -d '\n' >> $sentence_corpus
+			fi
 			echo "" >> $sentence_corpus
 		done
 	fi
