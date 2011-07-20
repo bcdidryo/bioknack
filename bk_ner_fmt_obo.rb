@@ -3,9 +3,15 @@
 require 'optparse'
 
 @names_only = false
+@omit_obsolete = false
+
+def print_help()
+	puts 'TODO'
+end
 
 options = OptionParser.new { |option|
         option.on('-n', '--names-only') { @names_only = true }
+	option.on('-o', '--omit-obsolete') { @omit_obsolete = true }
 }
 
 begin
@@ -24,17 +30,27 @@ def unfold(synonym)
 	return synonym.scan(/\(([^)]+)\)/).flatten
 end
 
+output = []
+
 STDIN.each { |line|
 	line.chomp!
 
-	is_term = true if line == '[Term]'
-	is_term = false if line == ''
+	if line == '[Term]' then
+		output.clear
+		is_term = true
+	end
+	if line == '' then
+		output.each { |line| puts line } if is_term
+		is_term = false
+	end
 	next unless is_term
+
+	is_term = false if @omit_obsolete and line == 'is_obsolete: true'
 
 	id = line['id: '.length..line.length-1] if line.start_with?('id: ')
 	next unless id
 
-	puts "#{line['name: '.length..line.length-1]}\t#{id}" if line.start_with?('name: ')
-	unfold(line.match(/\"([^"]+)\"/)[1]).each { |synonym| puts "#{synonym}\t#{id}" } if line.start_with?('synonym: ') and not @names_only
+	output << "#{line['name: '.length..line.length-1]}\t#{id}" if line.start_with?('name: ')
+	unfold(line.match(/\"([^"]+)\"/)[1]).each { |synonym| output << "#{synonym}\t#{id}" } if line.start_with?('synonym: ') and not @names_only
 }
 

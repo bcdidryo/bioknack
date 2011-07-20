@@ -4,7 +4,7 @@ IFS=$(echo -e -n "\n\b")
 
 rm -f titles.tsv titles.tsv.tmp
 
-for article in `find pmc -name *.nxml` ; do
+for article in `find input -name *.nxml` ; do
 
 	pmcid=`basename "$article" .nxml | grep -o -E '[0-9]+$'`
 	echo -e -n "$pmcid\t" >> titles.tsv.tmp
@@ -28,7 +28,7 @@ for ontology in dictionaries/*.obo ; do
 
 	if [ ! -f "$ontology" ] ; then continue ; fi
 
-	<"$ontology" bk_ner_fmt_obo.rb -n | awk -F "\t" '{print $2"\t"$1}' >> term_names.tsv.tmp
+	<"$ontology" bk_ner_fmt_obo.rb -n -o | awk -F "\t" '{print $2"\t"$1}' >> term_names.tsv.tmp
 
 done
 
