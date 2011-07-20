@@ -216,7 +216,7 @@ if [ "$1" = 'obo' ] ; then
 	wget -P $obo_dict http://obo.cvs.sourceforge.net/viewvc/obo/obo/ontology/genomic-proteomic/gene_ontology_edit.obo
 
 	echo " - generating ontology dictionary"
-	cat $obo_dict/*.obo | bk_ner_fmt_obo.rb | grep -E '^.{6,}	' \
+	cat $obo_dict/*.obo | $ruby_interpreter ./bioknack/bk_ner_fmt_obo.rb | grep -E '^.{6,}	' \
 		| grep -v -E '[^	]+ \([^\(\)]+\)	' | grep -v -E '[^	]+ \[.+\]	' \
 		| grep -v -E '\.|,' | grep -v -E '[^ ]+ [^ ]+ [^ ]+ [^ ]+ [^ ]+' | sort | uniq > $tmp_dir/ontologies
 fi
@@ -257,7 +257,7 @@ if [ "$1" = 'all' ] || [ "$1" = 'corpus' ] ; then
 			if [ "$format" = 'txt' ] ; then
 				<"$i" tr -d '\n' >> $sentence_corpus
 			else
-				<"$i" bk_ner_extract_tag.rb '<body>' '</body>' \
+				<"$i" $ruby_interpreter ./bioknack/bk_ner_extract_tag.rb '<body>' '</body>' \
 					| tr -d '\n' >> $sentence_corpus
 			fi
 			echo "" >> $sentence_corpus
@@ -297,7 +297,7 @@ fi
 
 if [ "$1" = 'all' ] || [ "$1" = 'genes' ] ; then
 	echo "Generating Entrez gene dictionary..."
-	<$entrez/gene_info bk_ner_fmt_entrezgene.rb > $tmp_dir/entrez_genes
+	<$entrez/gene_info $ruby_interpreter ./bioknack/bk_ner_fmt_entrezgene.rb > $tmp_dir/entrez_genes
 
 	echo "Generating RefSeq gene dictionary..."
 	<$refseq/release$refseq_version.accession2geneid $awk_interpreter -F '\t' '{
@@ -382,7 +382,7 @@ if [ "$1" = 'all' ] || [ "$1" = 'score' ] ; then
 
 	echo " - compressing and accumulating document IDs, gene IDs and scores"
 	$awk_interpreter -F "\t|[|]" '{print $1"\t"$4"\t"$3}' $tmp_dir/bk_genes_species_score \
-		| sort | uniq | ./bioknack/bk_ner_accumulate_score.rb \
+		| sort | uniq | $ruby_interpreter ./bioknack/bk_ner_accumulate_score.rb \
 		| sort -r -n -k 3 > $tmp_dir/bk_documents_genes_score
 
 	echo " - writing gene results w/ tail cutoff after $cutoff hits"

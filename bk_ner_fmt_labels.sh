@@ -2,6 +2,10 @@
 
 IFS=$(echo -e -n "\n\b")
 
+# On OSX, use the -E parameter:
+#$sed_regexp=-E
+$sed_regexp=-r
+
 rm -f titles.tsv titles.tsv.tmp
 
 for article in `find input -name *.nxml` ; do
@@ -11,7 +15,7 @@ for article in `find input -name *.nxml` ; do
 
 	<$article bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
 		| bk_ner_extract_tag.rb '<article-title>' '</article-title>' \
-		| tr -d "\n" | sed -E 's/(^ +| +$)//g' | sed -E 's/ +/ /g' >> titles.tsv.tmp
+		| tr -d "\n" | sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' >> titles.tsv.tmp
 
 done
 
@@ -20,7 +24,7 @@ rm -f titles.tsv.tmp
 
 rm -f gene_names.tsv
 
-awk -F '\t' '{print $2"\t"$3}' dictionaries/gene_info | grep -v NEWENTRY | sort -t "	" -k 1 > gene_names.tsv
+gawk -F '\t' '{print $2"\t"$3}' dictionaries/gene_info | grep -v NEWENTRY | sort -t "	" -k 1 > gene_names.tsv
 
 rm -f term_names.tsv term_names.tsv.tmp
 
@@ -28,7 +32,7 @@ for ontology in dictionaries/*.obo ; do
 
 	if [ ! -f "$ontology" ] ; then continue ; fi
 
-	<"$ontology" bk_ner_fmt_obo.rb -n -o | awk -F "\t" '{print $2"\t"$1}' >> term_names.tsv.tmp
+	<"$ontology" bk_ner_fmt_obo.rb -n -o | gawk -F "\t" '{print $2"\t"$1}' >> term_names.tsv.tmp
 
 done
 
@@ -38,7 +42,7 @@ rm -f term_names.tsv.tmp
 rm -f species_names.tsv
 
 # The part up to (and including) 'uniq' is copy/paste from bk_ner_gn.sh.
-grep 'scientific name' dictionaries/names.dmp | cut -f 1,3 | awk -F '\t' '{
+grep 'scientific name' dictionaries/names.dmp | cut -f 1,3 | gawk -F '\t' '{
 		y=$2;
 		sub(/ [^a-z].*/, "", y);
 		if (match($2, "^\"")) {
@@ -58,6 +62,6 @@ grep 'scientific name' dictionaries/names.dmp | cut -f 1,3 | awk -F '\t' '{
 			print y"\t"$1
 		}
 	}' | sort -k 1,2 | uniq \
-	| grep -v -E '^.\. ' | grep -v '\.' | awk -F "\t" '{print $2"\t"$1}' \
+	| grep -v -E '^.\. ' | grep -v '\.' | gawk -F "\t" '{print $2"\t"$1}' \
 	| sort -k 1 > species_names.tsv
 
