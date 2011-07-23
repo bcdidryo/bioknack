@@ -33,9 +33,16 @@
 #     2. gene/species/term ID
 #     3. score
 
+os=`uname`
+
+if [ "$os" != 'Darwin' ] && [ "$os" != 'Linux' ] ; then
+	echo "Sorry, but you have to run this script under Mac OS X or Linux."
+	exit 1
+fi
+
 if [[ $# -lt 1 ]] || [[ $# -gt 2 ]] ; then
 	echo "TODO: help message"
-	exit
+	exit 1
 fi
 
 # all corpus species genes ner score
@@ -43,8 +50,16 @@ if [ "$1" != 'all' ] && [ "$1" != 'corpus' ] && [ "$1" != 'species' ] && [ "$1" 
 	&& [ "$1" != 'ner' ] && [ "$1" != 'score' ] \
 	&& [ "$1" != 'minimal' ] && [ "$1" != 'pmc' ] && [ "$1" != 'obo' ] ; then
 	echo "TODO: help message"
-	exit
+	exit 1
 fi
+
+# On Linux some joins complain about unsorted input by default.
+# The reason is lies in the very interesting ignorance of the LANG
+# variable, which would tell 'sort' and 'join' about the text coding
+# used.
+LANG="C"
+LC_ALL="C"
+LC_COLLATE="C"
 
 # Format of the input files (determines file suffix too):
 format=nxml
@@ -52,7 +67,7 @@ format=nxml
 if [[ $# -eq 2 ]] ; then
 	if [ "$2" != 'nxml' ] && [ "$2" != 'xml' ] && [ "$2" != 'txt' ] ; then
 		echo "TODO: help message"
-		exit
+		exit 1
 	fi
 	format=$2
 fi
@@ -76,9 +91,19 @@ genes_result_file=genes.tsv
 species_result_file=species.tsv
 ontologies_result_file=terms.tsv
 
-# On Mac OSX either run `sudo port install gawk` or set to 'awk'
+# Use 'gawk' as default. Mac OS X's 'awk' works as well, but
+# for consistency I would suggest running `sudo port install gawk`.
+# The default Linux 'awk' does *not* work.
+if [ "$os" = 'Darwin' ] ; then
+	awk_interpreter=awk
+	sed_regexp=-E
+fi
+if [ "$os" = 'Linux' ] ; then
+	awk_interpreter=gawk
+	sed_regexp=-r
+fi
+
 # See below about using JRuby.
-awk_interpreter=gawk
 ruby_interpreter=ruby
 
 # Whether the gene dicionaries should be split in 9 or 99 partitions
@@ -203,7 +228,7 @@ if [ "$1" = 'pmc' ] ; then
 		if [ -d "$directory" ] ; then rm -rf "$directory" ; fi
 	done
 	echo "Downloading PubMed Central archives..."
-	wget -P $input_dir ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/articles.*.tar.gz
+	wget -P $input_dir ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/articles.A*.tar.gz
 	for i in $input_dir/articles.*.tar.gz ; do
 		tar xzf $i -C $input_dir
 	done
@@ -230,7 +255,7 @@ if [ "$1" = 'all' ] || [ "$1" = 'corpus' ] ; then
 		pmcid=`basename "$i" .$format`
 		echo -e -n "$pmcid\t" >> $chunky_corpus
 		grep -o -E '<italic>[^<]+</' "$i" | sed 's/<italic>//' | sed 's/<\///' \
-			| sed -E 's/(^ +| +$)//g' | sed 's/-/ /g' \
+			| sed $sed_regexp 's/(^ +| +$)//g' | sed 's/-/ /g' \
 			| grep -v $stop_regexp_type "$stop_regexp" \
 			| sed 's/$/;/' \
 			| sort | uniq | tr -d '\n' >> $chunky_corpus
@@ -280,9 +305,11 @@ if [ "$1" = 'all' ] || [ "$1" = 'species' ] ; then
 			};
 			if (match(y, "^[a-zA-Z0-9]")) {
 				split(y, x, " ");
-				if (length(x) > 1 && match(x[1], "^[A-Z][a-z]")) {
-					print x[1]"\t"$1;
-					print substr(x[1], 1, 1)"."substr(y, length(x[1])+1)"\t"$1
+				if (length(x) > 1) {
+					if (match(x[1], "^[A-Z][a-z]")) {
+						print x[1]"\t"$1;
+						print substr(x[1], 1, 1)"."substr(y, length(x[1])+1)"\t"$1
+					};
 				};
 				print y"\t"$1
 			}
@@ -370,20 +397,22 @@ if [ "$1" = 'all' ] || [ "$1" = 'score' ] ; then
 
 	echo " - preparing gene results for join with species dictionary"
 	$awk_interpreter -F "\t" '{print $2"|"$3"\t"$1"\t"$4"\t"$5}' $tmp_dir/bk_genes_scored \
-		| sort -k 1 > $tmp_dir/bk_genes_scored_for_join
+		| sort -k 1,1 > $tmp_dir/bk_genes_scored_for_join
 
+	# The `sort -k 1,1` is there because Linux's sort
+	# sucks harder than a black hole.
 	echo " - preparing species dictionary for join with gene results (no species score used)"
-	$awk_interpreter -F "\t" '{print $1"|"$3"\t"$2}' $tmp_dir/bk_species_* | sort -k 1,2 \
-		| uniq > $tmp_dir/bk_species_for_join
+	$awk_interpreter -F "\t" '{print $1"|"$3"\t"$2}' $tmp_dir/bk_species_? | sort -k 1,2 \
+		| uniq | sort -k 1,1 > $tmp_dir/bk_species_for_join
 
 	echo " - joining results and species dictionary"
 	join -t "	" -1 1 -2 1 $tmp_dir/bk_genes_scored_for_join \
-		$tmp_dir/bk_species_for_join | sort -r -n -k 2 > $tmp_dir/bk_genes_species_score
+		$tmp_dir/bk_species_for_join | sort -r -n -k 2,2 > $tmp_dir/bk_genes_species_score
 
 	echo " - compressing and accumulating document IDs, gene IDs and scores"
 	$awk_interpreter -F "\t|[|]" '{print $1"\t"$4"\t"$3}' $tmp_dir/bk_genes_species_score \
 		| sort | uniq | $ruby_interpreter ./bioknack/bk_ner_accumulate_score.rb \
-		| sort -r -n -k 3 > $tmp_dir/bk_documents_genes_score
+		| sort -r -n -k 3,3 > $tmp_dir/bk_documents_genes_score
 
 	echo " - writing gene results w/ tail cutoff after $cutoff hits"
 	rm -f $genes_result_file $species_result_file $ontologies_result_file
@@ -395,7 +424,7 @@ if [ "$1" = 'all' ] || [ "$1" = 'score' ] ; then
 	cat $tmp_dir/bk_species_? | cut -f 1,3 | sort | uniq -c | $awk_interpreter -F "\t" '{
 			split($1, x, " ");
 			print x[2]"\t"$2"\t"x[1]
-		}' | sort -r -n -k 3 | tee $tmp_dir/bk_species_scored > $species_result_file
+		}' | sort -r -n -k 3,3 | tee $tmp_dir/bk_species_scored > $species_result_file
  
 	if [ -f $tmp_dir/ontologies ] ; then
 		echo " - scoring ontology terms"

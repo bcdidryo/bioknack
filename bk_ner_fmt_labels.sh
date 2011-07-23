@@ -2,9 +2,24 @@
 
 IFS=$(echo -e -n "\n\b")
 
-# On OSX, use the -E parameter:
-#$sed_regexp=-E
-$sed_regexp=-r
+# Fix ordering issues on Linux:
+LANG="C"
+LC_ALL="C"
+
+os=`uname`
+
+if [ "$os" != 'Darwin' ] && [ "$os" != 'Linux' ] ; then
+	echo "Sorry, but you have to run this script under Mac OS X or Linux."
+	exit 1
+fi
+
+if [ "$os" = 'Darwin' ] ; then
+	sed_regexp=-E
+fi
+
+if [ "$os" = 'Linux' ] ; then
+	sed_regexp=-r
+fi
 
 rm -f titles.tsv titles.tsv.tmp
 
