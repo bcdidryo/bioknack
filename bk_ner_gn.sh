@@ -228,7 +228,7 @@ if [ "$1" = 'pmc' ] ; then
 		if [ -d "$directory" ] ; then rm -rf "$directory" ; fi
 	done
 	echo "Downloading PubMed Central archives..."
-	wget -P $input_dir ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/articles.A*.tar.gz
+	wget -P $input_dir ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/articles.*.tar.gz
 	for i in $input_dir/articles.*.tar.gz ; do
 		tar xzf $i -C $input_dir
 	done
