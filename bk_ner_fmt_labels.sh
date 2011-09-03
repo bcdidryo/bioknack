@@ -24,17 +24,18 @@ fi
 rm -f titles.tsv titles.tsv.tmp
 
 for article in `find input -name *.nxml` ; do
-
 	pmcid=`basename "$article" .nxml | grep -o -E '[0-9]+$'`
-	echo -e -n "$pmcid\t" >> titles.tsv.tmp
-
-	<$article bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
+	<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
+		| bk_ner_extract_tag.rb '<article-id pub-id-type="pmc">' '</article-id>' \
+		| sed $sed_regexp 's/(^ +| +$)//g' | tr -d "\n" >> titles.tsv.tmp
+	echo -e -n "\t" >> titles.tsv.tmp
+	<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
 		| bk_ner_extract_tag.rb '<article-title>' '</article-title>' \
-		| tr -d "\n" | sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' >> titles.tsv.tmp
-
+		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> titles.tsv.tmp
+	echo "" >> titles.tsv.tmp
 done
 
-<titles.tsv.tmp sort -k 1 > titles.tsv
+<titles.tsv.tmp sort -k 1 | uniq | grep -v -E '^	' > titles.tsv
 rm -f titles.tsv.tmp
 
 rm -f gene_names.tsv
