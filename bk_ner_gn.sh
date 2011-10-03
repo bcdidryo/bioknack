@@ -2,6 +2,14 @@
 
 # Requirements:
 #
+# The following files are automatically downloaded when executing
+#
+#   - bk_ner_gn.sh all
+#   or alternatively
+#   - bk_ner_gn.sh minimal
+#   - bk_ner_gn.sh pmc
+#   - bk_ner_gn.sh obo
+#
 # NCBI's Entrez Gene Catalogue
 #   - expected in ./$entrez
 #   - wget ftp://ftp.ncbi.nih.gov/gene/DATA/gene_info.gz (and gunzip...)
@@ -134,6 +142,17 @@ PATH=$PATH:./bioknack
 
 error=0
 
+get_id() {
+	if [ "$2" = 'txt' ] ; then
+		id=`basename "$1" .$2`
+	else
+		id=(`<"$1" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
+			| bk_ner_extract_tag.rb '<article-id pub-id-type="pmc">' '</article-id>' \
+			| sed $sed_regexp 's/(^ +| +$)//g' | tr -d "\n"`)
+	fi
+	echo "$id"
+}
+
 if [ ! -d bioknack ] ; then
 	echo "Missing directory: bioknack"
 	echo "Get it via: https://github.com/joejimbo/bioknack"
@@ -252,7 +271,7 @@ if [ "$1" = 'all' ] || [ "$1" = 'corpus' ] ; then
 	echo " - extracting italicised text"
 	for i in $input_dir/*.{nxml,xml,txt} ; do
 		if [ ! -f "$i" ] && [ ! -h "$i" ] ; then continue ; fi
-		pmcid=`basename "$i" .$format`
+		pmcid=$(get_id "$i" "$format")
 		echo -e -n "$pmcid\t" >> $chunky_corpus
 		grep -o -E '<italic>[^<]+</' "$i" | sed 's/<italic>//' | sed 's/<\///' \
 			| sed $sed_regexp 's/(^ +| +$)//g' | sed 's/-/ /g' \
@@ -264,7 +283,7 @@ if [ "$1" = 'all' ] || [ "$1" = 'corpus' ] ; then
 	echo " - extracting words/compounds with two or more uppercase letters"
 	for i in $input_dir/*.{nxml,xml,txt} ; do
 		if [ ! -f "$i" ] && [ ! -h "$i" ] ; then continue ; fi
-		pmcid=`basename "$i" .$format`
+		pmcid=$(get_id "$i" "$format")
 		echo -e -n "$pmcid\t" >> $chunky_corpus
 		grep -o $entity_regexp_type "$entity_regexp" "$i" \
 			| sed 's/^.//' | sed 's/.$//' | sed 's/-/ /' | sed 's/(^ +| +$)//g' \
@@ -277,7 +296,7 @@ if [ "$1" = 'all' ] || [ "$1" = 'corpus' ] ; then
 		echo " - extracting sentences"
 		for i in $input_dir/*.{nxml,xml,txt} ; do
 			if [ ! -f "$i" ] && [ ! -h "$i" ] ; then continue ; fi
-			pmcid=`basename "$i" .$format`
+			pmcid=$(get_id "$i" "$format")
 			echo -e -n "$pmcid\t" >> $sentence_corpus
 			if [ "$format" = 'txt' ] ; then
 				<"$i" tr -d '\n' >> $sentence_corpus
