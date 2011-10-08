@@ -67,6 +67,8 @@ def query(dataset, p2e_attributes, id, xtra=nil)
 			else
 				ids = row[index].scan(/^((PMC)?\d+)|&thinsp;((PMC)?\d+)/)
 			end
+			ids.flatten!
+			ids.delete_if { |id| id == nil or id == 'PMC' }
 		end
 
 		next unless ids
