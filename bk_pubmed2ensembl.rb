@@ -131,7 +131,7 @@ if @mode == :list or @mode == :attributes then
 		arr << dataset[0].sub('_gene_ensembl', '') if @mode == :list
 		arr = dataset[1].list_attributes if @mode == :attributes and dataset[0] == 'hsapiens_gene_ensembl'
 	}
-	arr.delete_if { |attribute| attribute.match(/^pmc?id/) == nil } if @mode == :attributes
+	arr.delete_if { |attribute| attribute.match(/^pmc?id_\d+$/) == nil } if @mode == :attributes
 	arr.sort.each { |x|
 		puts "  #{x}"
 	}
