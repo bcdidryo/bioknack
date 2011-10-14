@@ -163,17 +163,17 @@ begin
 	options.parse!
 rescue OptionParser::InvalidOption
 	print_help()
-	exit
+	exit 1
 end
 
 if @mode == :unknown then
 	print_help()
-	exit
+	exit 1
 end
 
 if ARGV.length != 2 then
 	print_help()
-	exit
+	exit 1
 end
 
 database_file_name = ARGV[0]
