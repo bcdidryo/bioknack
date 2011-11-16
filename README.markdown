@@ -1,6 +1,8 @@
 bioknack
 ========
 
+![bioknack logo](https://github.com/joejimbo/bioknack/raw/master/logo/bioknack120.png)
+
 *bioknack* is going to be an accumulation of tools that
 are relevant to bioinformatic applications. The tool set
 will be updated every time I get the knack of solving a
