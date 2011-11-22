@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# bioknack's NER-tool of generic normalisations.
+
 # Requirements:
 #
 # The following files are automatically downloaded when executing
@@ -41,6 +43,41 @@
 #     2. gene/species/term ID
 #     3. score
 
+usage() {
+	echo "Usage: bk_ner_gn.sh task [format]"
+	echo ""
+	echo "Parameters:"
+	echo "  task   : name of the task that should be carried out. The name"
+	echo "           can be one of the following:"
+	echo "             minimal : downloads minimal set of dictionaries, i.e."
+	echo "                       Entrez gene, RefSeq, NCBI's taxonomy"
+	echo "             obo     : downloads some OBO ontologies, i.e."
+	echo "                       Gene ontology, human disease ontology, ChEBI"
+	echo "             pmc     : downloads the PubMed Central open access subset"
+	echo "             corpus  : compiles text documents into a corpus"
+	echo "             species : compiles species dictionaries based on NCBI's"
+	echo "                       taxonomy"
+	echo "             genes   : compiles gene dictionaries based on Entrez gene"
+	echo "                       and RefSeq"
+	echo "             ner     : carries out the named entity recognition"
+	echo "             score   : scores the 'ner' results"
+	echo "             all     : carries out all named entity recognition steps"
+	echo "                       EXCEPT the downloading of the input source;"
+	echo "                       equivalent to running the tasks 'corpus',"
+	echo "                       'species', 'genes', 'ner' and 'score' in that"
+	echo "                       order"
+	echo "  format : format of the text documents; either 'nxml', 'xml' or 'txt',"
+	echo "           where 'nxml' is the default."
+	echo ""
+	echo "Example: full named entity recognition run over PubMed Central's"
+	echo "         open access subset."
+	echo ""
+	echo "  $ bk_ner_gn.sh minimal              (get genes/species refs)"
+	echo "  $ bk_ner_gn.sh obo                  (get some OBO ontologies)"
+	echo "  $ bk_ner_gn.sh pmc                  (get OA-subset of PMC)"
+	echo "  $ bk_ner_gn.sh all                  (run the NER)"
+}
+
 os=`uname`
 
 if [ "$os" != 'Darwin' ] && [ "$os" != 'Linux' ] ; then
@@ -49,7 +86,7 @@ if [ "$os" != 'Darwin' ] && [ "$os" != 'Linux' ] ; then
 fi
 
 if [[ $# -lt 1 ]] || [[ $# -gt 2 ]] ; then
-	echo "TODO: help message"
+	usage
 	exit 1
 fi
 
@@ -57,7 +94,7 @@ fi
 if [ "$1" != 'all' ] && [ "$1" != 'corpus' ] && [ "$1" != 'species' ] && [ "$1" != 'genes' ] \
 	&& [ "$1" != 'ner' ] && [ "$1" != 'score' ] \
 	&& [ "$1" != 'minimal' ] && [ "$1" != 'pmc' ] && [ "$1" != 'obo' ] ; then
-	echo "TODO: help message"
+	usage
 	exit 1
 fi
 
@@ -74,7 +111,7 @@ format=nxml
 
 if [[ $# -eq 2 ]] ; then
 	if [ "$2" != 'nxml' ] && [ "$2" != 'xml' ] && [ "$2" != 'txt' ] ; then
-		echo "TODO: help message"
+		usage
 		exit 1
 	fi
 	format=$2
@@ -258,6 +295,7 @@ if [ "$1" = 'obo' ] ; then
 	echo "Downloading (some) OBOs..."
 	wget -P $obo_dict http://diseaseontology.svn.sourceforge.net/viewvc/\*checkout\*/diseaseontology/trunk/HumanDO.obo
 	wget -P $obo_dict http://obo.cvs.sourceforge.net/viewvc/obo/obo/ontology/genomic-proteomic/gene_ontology_edit.obo
+	wget -P $obo_dict ftp://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi.obo
 
 	echo " - generating ontology dictionary"
 	cat $obo_dict/*.obo | $ruby_interpreter ./bioknack/bk_ner_fmt_obo.rb | grep -E '^.{6,}	' \
