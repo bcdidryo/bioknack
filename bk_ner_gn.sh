@@ -288,6 +288,7 @@ if [ "$1" = 'pmc' ] ; then
 	for i in $input_dir/articles.*.tar.gz ; do
 		tar xzf $i -C $input_dir
 	done
+	rm -f $input_dir/articles.*.tar.gz
 fi
 
 if [ "$1" = 'obo' ] ; then
