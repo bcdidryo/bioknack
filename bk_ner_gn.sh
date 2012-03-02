@@ -156,7 +156,7 @@ ruby_interpreter=ruby
 #  1 : create 99 partitions
 # Might be good to create 99 partitions when using JRuby, because it consumes
 # much more memory than the standard implementation.
-small_gene_partitions=0
+small_gene_partitions=1
 
 # Number of top-$cutoff results that make it into the final output
 cutoff=100
