@@ -11,8 +11,8 @@ closetag = ARGV[1]
 seen_tags = 0
 
 while chunk = STDIN.gets('>') do
-	if chunk.end_with?(closetag) then
-		print chunk[0..-1*closetag.length-1] if seen_tags > 0
+	if seen_tags > 0 and chunk.end_with?(closetag) then
+		print chunk[0..-1*closetag.length-1]
 		seen_tags -= 1
 		next
 	end

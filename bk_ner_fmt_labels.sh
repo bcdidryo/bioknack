@@ -21,22 +21,45 @@ if [ "$os" = 'Linux' ] ; then
 	sed_regexp=-r
 fi
 
-rm -f titles.tsv titles.tsv.tmp
+# TSV files that hold metadata information about:
+# publication titles, pubmed IDs, DOIs
+for tsvprefix in {'titles','journals','year','pmid','doi'} ; do 
+	rm -f $tsvprefix.tsv $tsvprefix.tsv.tmp
+done
 
 for article in `find input -name *.nxml` ; do
 	pmcid=`basename "$article" .nxml | grep -o -E '[0-9]+$'`
 	<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
 		| bk_ner_extract_tag.rb '<article-id pub-id-type="pmc">' '</article-id>' \
-		| sed $sed_regexp 's/(^ +| +$)//g' | tr -d "\n" >> titles.tsv.tmp
-	echo -e -n "\t" >> titles.tsv.tmp
+		| sed $sed_regexp 's/(^ +| +$)//g' | tr -d "\n" \
+		| tee -a journals.tsv.tmp year.tsv.tmp pmid.tsv.tmp doi.tsv.tmp >> titles.tsv.tmp
+	echo -e -n "\t" | tee -a journals.tsv.tmp year.tsv.tmp pmid.tsv.tmp doi.tsv.tmp >> titles.tsv.tmp
 	<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
 		| bk_ner_extract_tag.rb '<article-title>' '</article-title>' \
 		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> titles.tsv.tmp
 	echo "" >> titles.tsv.tmp
+	<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
+		| bk_ner_extract_tag.rb '<pub-date pub-type="ppub">' '</pub-date>' \
+		| bk_ner_extract_tag.rb '<year>' '</year>' \
+		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> year.tsv.tmp
+	echo "" >> year.tsv.tmp
+	<"$article" bk_ner_extract_tag.rb '<journal-meta>' '</journal-meta>' \
+		| bk_ner_extract_tag.rb '<journal-title-group>' '</journal-title-group>' \
+		| bk_ner_extract_tag.rb '<journal-title>' '</journal-title>' \
+		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> journals.tsv.tmp
+	echo "" >> journals.tsv.tmp
+	for idtype in {'pmid','doi'} ; do
+		<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
+			| bk_ner_extract_tag.rb "<article-id pub-id-type=\"$idtype\">" '</article-id>' \
+			| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> $idtype.tsv.tmp
+		echo "" >> $idtype.tsv.tmp
+	done
 done
 
-<titles.tsv.tmp sort -k 1 | uniq | grep -v -E '^	' > titles.tsv
-rm -f titles.tsv.tmp
+for tsvprefix in {'titles','journals','year','pmid','doi'} ; do 
+	<$tsvprefix.tsv.tmp sort -k 1 | uniq | grep -v -E '^	' > $tsvprefix.tsv
+	rm -f $tsvprefix.tsv.tmp
+done
 
 rm -f gene_names.tsv
 
