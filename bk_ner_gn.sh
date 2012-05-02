@@ -37,7 +37,7 @@
 # - written to
 #   ./$genes_result_file
 #   ./$species_result_file
-#   ./$ontologies_result_file
+#   ./$ontologies_{go,do,chebi}_result_file
 #   as TSVs with the following columns
 #     1. document ID
 #     2. gene/species/term ID
@@ -134,7 +134,9 @@ sentence_corpus=$tmp_dir/sentence_corpus
 input_dir=input
 genes_result_file=genes.tsv
 species_result_file=species.tsv
-ontologies_result_file=terms.tsv
+ontologies_go_result_file=terms_go.tsv
+ontologies_do_result_file=terms_do.tsv
+ontologies_chebi_result_file=terms_chebi.tsv
 
 # Use 'gawk' as default. Mac OS X's 'awk' works as well, but
 # for consistency I would suggest running `sudo port install gawk`.
@@ -473,7 +475,7 @@ if [ "$1" = 'all' ] || [ "$1" = 'score' ] ; then
 		| sort -r -n -k 3,3 > $tmp_dir/bk_documents_genes_score
 
 	echo " - writing gene results w/ tail cutoff after $cutoff hits"
-	rm -f $genes_result_file $species_result_file $ontologies_result_file
+	rm -f $genes_result_file $species_result_file $ontologies_go_result_file $ontologies_do_result_file $ontologies_chebi_result_file
 	for document_id in `cut -f 1 $tmp_dir/bk_documents_genes_score | sort -n | uniq` ; do
 		grep -w -E "^$document_id" $tmp_dir/bk_documents_genes_score | head -n $cutoff >> $genes_result_file
 	done
@@ -489,11 +491,14 @@ if [ "$1" = 'all' ] || [ "$1" = 'score' ] ; then
 		cut -f 1,3 $tmp_dir/bk_ontologies | sort | uniq -c | $awk_interpreter -F "\t" '{
 				split($1, x, " ");
 				print x[2]"\t"$2"\t"x[1]
-			}' | sort -r -n -k 3 | tee $tmp_dir/bk_ontologies_scored > $ontologies_result_file
+			}' | sort -r -n -k 3 > $tmp_dir/bk_ontologies_scored
+		grep -E '^GO:' $tmp_dir/bk_ontologies_scored > $ontologies_go_result_file
+		grep -E '^DO:' $tmp_dir/bk_ontologies_scored > $ontologies_do_result_file
+		grep -E '^CHEBI:' $tmp_dir/bk_ontologies_scored > $ontologies_chebi_result_file
 	fi
 
 	echo -n "Output files: $genes_result_file $species_result_file"
-	if [ -f $tmp_dir/ontologies ] ; then echo " $ontologies_result_file" ; else echo "" ; fi
+	if [ -f $tmp_dir/ontologies ] ; then echo " $ontologies_go_result_file $ontologies_do_result_file $ontologies_chebi_result_file" ; else echo "" ; fi
 fi
 
 echo "Done. Have a nice day."
