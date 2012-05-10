@@ -492,9 +492,9 @@ if [ "$1" = 'all' ] || [ "$1" = 'score' ] ; then
 				split($1, x, " ");
 				print x[2]"\t"$2"\t"x[1]
 			}' | sort -r -n -k 3 > $tmp_dir/bk_ontologies_scored
-		grep -E '^GO:' $tmp_dir/bk_ontologies_scored > $ontologies_go_result_file
-		grep -E '^DO:' $tmp_dir/bk_ontologies_scored > $ontologies_do_result_file
-		grep -E '^CHEBI:' $tmp_dir/bk_ontologies_scored > $ontologies_chebi_result_file
+		grep -E '	GO:[0-9]+	[0-9]+$' $tmp_dir/bk_ontologies_scored > $ontologies_go_result_file
+		grep -E '	DO:[0-9]+	[0-9]+$' $tmp_dir/bk_ontologies_scored > $ontologies_do_result_file
+		grep -E '	CHEBI:[0-9]+	[0-9]+$' $tmp_dir/bk_ontologies_scored > $ontologies_chebi_result_file
 	fi
 
 	echo -n "Output files: $genes_result_file $species_result_file"
