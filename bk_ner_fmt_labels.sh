@@ -57,7 +57,26 @@ for article in `find input -name *.nxml` ; do
 done
 
 for tsvprefix in {'titles','journals','year','pmid','doi'} ; do 
-	<$tsvprefix.tsv.tmp sort -k 1 | uniq | grep -v -E '^	' > $tsvprefix.tsv
+	<$tsvprefix.tsv.tmp sort -k 1,1 | ruby -e 'last_line = nil
+		STDIN.each { |line|
+		    if last_line then
+		        chunks = line.split("\t", 2);
+		        last_chunks = last_line.split("\t", 2);
+		        if chunks[0] == last_chunks[0] then
+		            if chunks[1].length < last_chunks[1].length then
+		                # do nothing
+		            else
+		                last_line = line
+		            end
+		        else
+		            puts last_line
+		            last_line = line
+		        end
+		    else
+		        last_line = line
+		    end
+		};
+		puts last_line if last_line' | grep -v -E '^	' > $tsvprefix.tsv
 	rm -f $tsvprefix.tsv.tmp
 done
 
