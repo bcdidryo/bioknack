@@ -39,7 +39,7 @@ for article in `find input -name *.nxml` ; do
 		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> titles.tsv.tmp
 	echo "" >> titles.tsv.tmp
 	<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
-		| bk_ner_extract_tag.rb '<pub-date pub-type="ppub">' '</pub-date>' \
+		| bk_ner_extract_tag.rb '<pub-date pub-type="epub">' '</pub-date>' \
 		| bk_ner_extract_tag.rb '<year>' '</year>' \
 		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> year.tsv.tmp
 	echo "" >> year.tsv.tmp
