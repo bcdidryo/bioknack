@@ -29,17 +29,15 @@ done
 
 for article in `find input -name *.nxml` ; do
 	pmcid=`basename "$article" .nxml | grep -o -E '[0-9]+$'`
-	<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
-		| bk_ner_extract_tag.rb '<article-id pub-id-type="pmc">' '</article-id>' \
+	<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' > article-meta.tmp
+	<article-meta.tmp bk_ner_extract_tag.rb '<article-id pub-id-type="pmc">' '</article-id>' \
 		| sed $sed_regexp 's/(^ +| +$)//g' | tr -d "\n" \
 		| tee -a journals.tsv.tmp year.tsv.tmp pmid.tsv.tmp doi.tsv.tmp >> titles.tsv.tmp
 	echo -e -n "\t" | tee -a journals.tsv.tmp year.tsv.tmp pmid.tsv.tmp doi.tsv.tmp >> titles.tsv.tmp
-	<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
-		| bk_ner_extract_tag.rb '<article-title>' '</article-title>' \
+	<article-meta.tmp bk_ner_extract_tag.rb '<article-title>' '</article-title>' \
 		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> titles.tsv.tmp
 	echo "" >> titles.tsv.tmp
-	<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
-		| bk_ner_extract_tag.rb '<pub-date pub-type="epub">' '</pub-date>' \
+	<article-meta.tmp bk_ner_extract_tag.rb '<pub-date pub-type="epub">' '</pub-date>' \
 		| bk_ner_extract_tag.rb '<year>' '</year>' \
 		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> year.tsv.tmp
 	echo "" >> year.tsv.tmp
@@ -49,11 +47,11 @@ for article in `find input -name *.nxml` ; do
 		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> journals.tsv.tmp
 	echo "" >> journals.tsv.tmp
 	for idtype in {'pmid','doi'} ; do
-		<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' \
-			| bk_ner_extract_tag.rb "<article-id pub-id-type=\"$idtype\">" '</article-id>' \
+		<article-meta.tmp bk_ner_extract_tag.rb "<article-id pub-id-type=\"$idtype\">" '</article-id>' \
 			| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> $idtype.tsv.tmp
 		echo "" >> $idtype.tsv.tmp
 	done
+	rm -f article-meta.tmp
 done
 
 for tsvprefix in {'titles','journals','year','pmid','doi'} ; do 
