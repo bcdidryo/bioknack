@@ -286,7 +286,12 @@ if [ "$1" = 'pmc' ] ; then
 		if [ -d "$directory" ] ; then rm -rf "$directory" ; fi
 	done
 	echo "Downloading PubMed Central archives..."
-	wget -P $input_dir ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/articles.*.tar.gz
+	# Using a wildcard does not work when going through squid as a proxy, so
+	# download the four archives one-by-one:
+	wget -P $input_dir ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/articles.A-B.tar.gz
+	wget -P $input_dir ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/articles.C-H.tar.gz
+	wget -P $input_dir ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/articles.I-N.tar.gz
+	wget -P $input_dir ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/articles.O-Z.tar.gz
 	for i in $input_dir/articles.*.tar.gz ; do
 		tar xzf $i -C $input_dir
 	done
