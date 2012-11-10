@@ -299,7 +299,7 @@ if [ "$1" = 'pmc' ] ; then
 fi
 
 if [ "$1" = 'obo' ] ; then
-	rm -rf $obo_dict/HumanDO.obo $obo_dict/gene_ontology_edit.obo
+	rm -rf $obo_dict/HumanDO.obo $obo_dict/gene_ontology_edit.obo $obo_dict/chebi.obo
 	echo "Downloading (some) OBOs..."
 	wget -P $obo_dict http://diseaseontology.svn.sourceforge.net/viewvc/\*checkout\*/diseaseontology/trunk/HumanDO.obo
 	wget -P $obo_dict http://obo.cvs.sourceforge.net/viewvc/obo/obo/ontology/genomic-proteomic/gene_ontology_edit.obo
