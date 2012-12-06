@@ -2,9 +2,13 @@
 
 IFS=$(echo -e -n "\n\b")
 
-# Fix ordering issues on Linux:
+# Fix ordering issues on Linux, speed-up things too:
 LANG="C"
 LC_ALL="C"
+LC_COLLATE="C"
+
+# Ruby interpreter to use:
+ruby_interpreter=ruby
 
 os=`uname`
 
@@ -28,31 +32,30 @@ for tsvprefix in {'titles','journals','year','pmid','doi'} ; do
 done
 
 for article in `find input -name *.nxml` ; do
-	pmcid=`basename "$article" .nxml | grep -o -E '[0-9]+$'`
-	<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' > article-meta.tmp
-	<article-meta.tmp bk_ner_extract_tag.rb '<article-id pub-id-type="pmc">' '</article-id>' \
+	<"$article" $ruby_interpreter bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' > article-meta.tmp
+	<article-meta.tmp $ruby_interpreter bk_ner_extract_tag.rb '<article-id pub-id-type="pmc">' '</article-id>' \
 		| sed $sed_regexp 's/(^ +| +$)//g' | tr -d "\n" \
 		| tee -a journals.tsv.tmp year.tsv.tmp pmid.tsv.tmp doi.tsv.tmp >> titles.tsv.tmp
 	echo -e -n "\t" | tee -a journals.tsv.tmp year.tsv.tmp pmid.tsv.tmp doi.tsv.tmp >> titles.tsv.tmp
-	<article-meta.tmp bk_ner_extract_tag.rb '<article-title>' '</article-title>' \
+	<article-meta.tmp $ruby_interpreter bk_ner_extract_tag.rb '<article-title>' '</article-title>' \
 		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> titles.tsv.tmp
 	echo "" >> titles.tsv.tmp
-	<article-meta.tmp bk_ner_extract_tag.rb '<pub-date pub-type="epub">' '</pub-date>' \
-		| bk_ner_extract_tag.rb '<year>' '</year>' \
+	<article-meta.tmp $ruby_interpreter bk_ner_extract_tag.rb '<pub-date pub-type="epub">' '</pub-date>' \
+		| $ruby_interpreter bk_ner_extract_tag.rb '<year>' '</year>' \
 		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> year.tsv.tmp
 	echo "" >> year.tsv.tmp
-	<"$article" bk_ner_extract_tag.rb '<journal-meta>' '</journal-meta>' \
-		| bk_ner_extract_tag.rb '<journal-title-group>' '</journal-title-group>' \
-		| bk_ner_extract_tag.rb '<journal-title>' '</journal-title>' \
+	<"$article" $ruby_interpreter bk_ner_extract_tag.rb '<journal-meta>' '</journal-meta>' \
+		| $ruby_interpreter bk_ner_extract_tag.rb '<journal-title-group>' '</journal-title-group>' \
+		| $ruby_interpreter bk_ner_extract_tag.rb '<journal-title>' '</journal-title>' \
 		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> journals.tsv.tmp
 	echo "" >> journals.tsv.tmp
 	for idtype in {'pmid','doi'} ; do
-		<article-meta.tmp bk_ner_extract_tag.rb "<article-id pub-id-type=\"$idtype\">" '</article-id>' \
+		<article-meta.tmp $ruby_interpreter bk_ner_extract_tag.rb "<article-id pub-id-type=\"$idtype\">" '</article-id>' \
 			| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> $idtype.tsv.tmp
 		echo "" >> $idtype.tsv.tmp
 	done
-	rm -f article-meta.tmp
 done
+rm -f article-meta.tmp
 
 for tsvprefix in {'titles','journals','year','pmid','doi'} ; do 
 	<$tsvprefix.tsv.tmp sort -k 1,1 | ruby -e 'last_line = nil
@@ -88,7 +91,7 @@ for ontology in dictionaries/*.obo ; do
 
 	if [ ! -f "$ontology" ] ; then continue ; fi
 
-	<"$ontology" bk_ner_fmt_obo.rb -n -o | gawk -F "\t" '{print $2"\t"$1}' >> term_names.tsv.tmp
+	<"$ontology" $ruby_interpreter bk_ner_fmt_obo.rb -n -o | gawk -F "\t" '{print $2"\t"$1}' >> term_names.tsv.tmp
 
 done
 
