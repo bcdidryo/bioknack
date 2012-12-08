@@ -7,8 +7,10 @@ LANG="C"
 LC_ALL="C"
 LC_COLLATE="C"
 
-# Ruby interpreter to use:
-ruby_interpreter=ruby
+# Remark: Ruby interpreter to use...
+#   ruby_interpreter=ruby
+# Any interesting settings (s.a. "ruby1.9 -KA") do not work here, because
+# IFS is redefined.
 
 os=`uname`
 
@@ -32,25 +34,26 @@ for tsvprefix in {'titles','journals','year','pmid','doi'} ; do
 done
 
 for article in `find input -name *.nxml` ; do
-	<"$article" $ruby_interpreter bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' > article-meta.tmp
-	<article-meta.tmp $ruby_interpreter bk_ner_extract_tag.rb '<article-id pub-id-type="pmc">' '</article-id>' \
+	<"$article" bk_ner_extract_tag.rb '<article-meta>' '</article-meta>' 1 > article-meta.tmp
+	<article-meta.tmp bk_ner_extract_tag.rb '<article-id pub-id-type="pmc">' '</article-id>' 1 \
 		| sed $sed_regexp 's/(^ +| +$)//g' | tr -d "\n" \
 		| tee -a journals.tsv.tmp year.tsv.tmp pmid.tsv.tmp doi.tsv.tmp >> titles.tsv.tmp
 	echo -e -n "\t" | tee -a journals.tsv.tmp year.tsv.tmp pmid.tsv.tmp doi.tsv.tmp >> titles.tsv.tmp
-	<article-meta.tmp $ruby_interpreter bk_ner_extract_tag.rb '<article-title>' '</article-title>' \
+	<article-meta.tmp bk_ner_extract_tag.rb '<article-title>' '</article-title>' \
 		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> titles.tsv.tmp
 	echo "" >> titles.tsv.tmp
-	<article-meta.tmp $ruby_interpreter bk_ner_extract_tag.rb '<pub-date pub-type="epub">' '</pub-date>' \
-		| $ruby_interpreter bk_ner_extract_tag.rb '<year>' '</year>' \
-		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> year.tsv.tmp
+	<article-meta.tmp bk_ner_extract_tag.rb '<pub-date pub-type="epub">' '</pub-date>' \
+		| bk_ner_extract_tag.rb '<year>' '</year>' 1 \
+		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' \
+		| sed $sed_regexp 's/(....).*/\1/' | tr -d "\n" >> year.tsv.tmp
 	echo "" >> year.tsv.tmp
-	<"$article" $ruby_interpreter bk_ner_extract_tag.rb '<journal-meta>' '</journal-meta>' \
-		| $ruby_interpreter bk_ner_extract_tag.rb '<journal-title-group>' '</journal-title-group>' \
-		| $ruby_interpreter bk_ner_extract_tag.rb '<journal-title>' '</journal-title>' \
+	<"$article" bk_ner_extract_tag.rb '<journal-meta>' '</journal-meta>' 1 \
+		| bk_ner_extract_tag.rb '<journal-title-group>' '</journal-title-group>' \
+		| bk_ner_extract_tag.rb '<journal-title>' '</journal-title>' \
 		| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> journals.tsv.tmp
 	echo "" >> journals.tsv.tmp
 	for idtype in {'pmid','doi'} ; do
-		<article-meta.tmp $ruby_interpreter bk_ner_extract_tag.rb "<article-id pub-id-type=\"$idtype\">" '</article-id>' \
+		<article-meta.tmp bk_ner_extract_tag.rb "<article-id pub-id-type=\"$idtype\">" '</article-id>' 1 \
 			| sed $sed_regexp 's/(^ +| +$)//g' | sed $sed_regexp 's/ +/ /g' | tr -d "\n" >> $idtype.tsv.tmp
 		echo "" >> $idtype.tsv.tmp
 	done
@@ -91,7 +94,7 @@ for ontology in dictionaries/*.obo ; do
 
 	if [ ! -f "$ontology" ] ; then continue ; fi
 
-	<"$ontology" $ruby_interpreter bk_ner_fmt_obo.rb -n -o | gawk -F "\t" '{print $2"\t"$1}' >> term_names.tsv.tmp
+	<"$ontology" bk_ner_fmt_obo.rb -n -o | gawk -F "\t" '{print $2"\t"$1}' >> term_names.tsv.tmp
 
 done
 
