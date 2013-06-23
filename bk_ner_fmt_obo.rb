@@ -6,19 +6,28 @@ require 'optparse'
 @omit_obsolete = false
 
 def print_help()
-	puts 'TODO'
+	puts 'Usage: bk_ner_fmt_obo.rb [options] < input.obo'
+	puts ''
+	puts 'Reads an OBO file from standard input and outputs a two-column TSV file'
+	puts 'on standard output with the following columns:'
+	puts '  1. OBO term name or OBO term synonym'
+	puts '  2. OBO id'
+	puts ''
+	puts 'Options:'
+	puts '  -n | --names-only    : omit synonyms in output'
+	puts '  -o | --omit-obsolete : do not output information of obsolete terms'
 end
 
 options = OptionParser.new { |option|
-        option.on('-n', '--names-only') { @names_only = true }
+	option.on('-n', '--names-only') { @names_only = true }
 	option.on('-o', '--omit-obsolete') { @omit_obsolete = true }
 }
 
 begin
-        options.parse!
+	options.parse!
 rescue OptionParser::InvalidOption
-        print_help()
-        exit
+	print_help()
+	exit
 end
 
 is_term = false
